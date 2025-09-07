@@ -1,6 +1,9 @@
 package admin
 
-import "github.com/go-advanced-admin/admin/internal/adminpanel"
+import "github.com/ovnicraft/go-advanced-admin/internal/adminpanel"
+
+// Version of the go-advanced-admin library
+const Version = "1.0.0"
 
 // ORMIntegrator defines the interface for ORM integrations with the admin panel.
 type ORMIntegrator = adminpanel.ORMIntegrator

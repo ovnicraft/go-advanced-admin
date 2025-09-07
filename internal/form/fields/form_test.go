@@ -3,8 +3,8 @@ package fields
 import (
 	"errors"
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
-	"github.com/go-advanced-admin/admin/internal/form/forms"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/form/forms"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

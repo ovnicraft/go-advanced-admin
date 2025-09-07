@@ -2,8 +2,8 @@ package fields
 
 import (
 	"errors"
-	"github.com/go-advanced-admin/admin/internal/form"
-	"github.com/go-advanced-admin/admin/internal/utils"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/utils"
 )
 
 type BaseField struct {

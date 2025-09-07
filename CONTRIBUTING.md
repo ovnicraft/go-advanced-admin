@@ -33,7 +33,7 @@ To implement a new feature, fix a bug, or improve documentation:
 2. **Clone the Fork**
 
    ```sh
-   git clone https://github.com/go-advanced-admin/admin.git
+   git clone https://github.com/ovnicraft/go-advanced-admin.git
    cd admin
    ```
 

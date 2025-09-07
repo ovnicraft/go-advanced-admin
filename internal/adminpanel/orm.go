@@ -39,4 +39,10 @@ type ORMIntegrator interface {
 
 	// UpdateInstanceOnlyFields updates an existing instance with only the specified fields.
 	UpdateInstanceOnlyFields(instance interface{}, fields []string, primaryKey interface{}) error
+
+	// GetAll retrieves all instances of the given model (used for AJAX operations).
+	GetAll(model interface{}) (interface{}, error)
+
+	// DeleteByID deletes an instance of the model by its primary key (used for AJAX operations).
+	DeleteByID(model interface{}, id interface{}) error
 }

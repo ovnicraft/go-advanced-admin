@@ -3,7 +3,7 @@ package fields
 import (
 	"errors"
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
 	"github.com/google/uuid"
 	"html/template"
 	"strings"

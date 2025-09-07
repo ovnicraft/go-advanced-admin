@@ -1,12 +1,12 @@
-module github.com/go-advanced-admin/admin/example
+module github.com/ovnicraft/go-advanced-admin/example
 
 go 1.23.1
 
-replace github.com/go-advanced-admin/admin => ./../
+replace github.com/ovnicraft/go-advanced-admin => ./../
 
 require (
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-advanced-admin/admin v0.0.0
+	github.com/ovnicraft/go-advanced-admin v0.0.0
 	github.com/go-advanced-admin/orm-gorm v0.0.1
 	github.com/go-advanced-admin/web-echo v0.0.1
 	github.com/labstack/echo/v4 v4.12.0

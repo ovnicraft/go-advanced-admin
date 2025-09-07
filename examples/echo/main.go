@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/glebarez/sqlite"
-	"github.com/go-advanced-admin/admin"
+	"github.com/ovnicraft/go-advanced-admin"
 	"github.com/go-advanced-admin/orm-gorm"
 	"github.com/go-advanced-admin/web-echo"
 	"github.com/labstack/echo/v4"

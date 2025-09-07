@@ -2,9 +2,9 @@ package adminpanel
 
 import (
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal"
-	"github.com/go-advanced-admin/admin/internal/logging"
-	"github.com/go-advanced-admin/admin/internal/utils"
+	"github.com/ovnicraft/go-advanced-admin/internal"
+	"github.com/ovnicraft/go-advanced-admin/internal/logging"
+	"github.com/ovnicraft/go-advanced-admin/internal/utils"
 	"net/http"
 )
 

@@ -3,7 +3,7 @@ package adminpanel
 import (
 	"bytes"
 	"errors"
-	"github.com/go-advanced-admin/admin/internal"
+	"github.com/ovnicraft/go-advanced-admin/internal"
 	"testing"
 )
 
