@@ -3,21 +3,23 @@ package logging
 type LogStoreLevel string
 
 const (
-	LogStoreLevelDelete       LogStoreLevel = "delete"
-	LogStoreLevelCreate       LogStoreLevel = "create"
-	LogStoreLevelUpdate       LogStoreLevel = "update"
-	LogStoreLevelInstanceView LogStoreLevel = "instance_view"
-	LogStoreLevelListView     LogStoreLevel = "list_view"
-	LogStoreLevelPanelView    LogStoreLevel = "panel_view"
+	LogStoreLevelDelete           LogStoreLevel = "delete"
+	LogStoreLevelCreate           LogStoreLevel = "create"
+	LogStoreLevelUpdate           LogStoreLevel = "update"
+	LogStoreLevelInstanceView     LogStoreLevel = "instance_view"
+	LogStoreLevelInstanceDelete   LogStoreLevel = "instance_delete"
+	LogStoreLevelListView         LogStoreLevel = "list_view"
+	LogStoreLevelPanelView        LogStoreLevel = "panel_view"
 )
 
 var levelsHierarchy = map[LogStoreLevel]int{
-	LogStoreLevelDelete:       1,
-	LogStoreLevelCreate:       2,
-	LogStoreLevelUpdate:       3,
-	LogStoreLevelInstanceView: 4,
-	LogStoreLevelListView:     5,
-	LogStoreLevelPanelView:    6,
+	LogStoreLevelDelete:         1,
+	LogStoreLevelCreate:         2,
+	LogStoreLevelUpdate:         3,
+	LogStoreLevelInstanceView:   4,
+	LogStoreLevelInstanceDelete: 1, // Same level as general delete
+	LogStoreLevelListView:       5,
+	LogStoreLevelPanelView:      6,
 }
 
 func (l LogStoreLevel) AssessLevel(assessmentLevel LogStoreLevel) bool {

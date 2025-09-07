@@ -290,7 +290,8 @@ func (m *Model) HandleDeleteAJAX(ctx interface{}) error {
 	}
 	
 	// Create delete log
-	m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, instanceID.(string), nil, m.Name, "")
+	instanceIDStr := fmt.Sprintf("%v", instanceID)
+	m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, instanceIDStr, nil, m.Name, "")
 	
 	response := NewSuccessResponse(nil, "Item deleted successfully")
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
@@ -339,7 +340,7 @@ func (m *Model) HandleBulkDeleteAJAX(ctx interface{}) error {
 		deletedCount++
 		
 		// Create delete log
-		m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, id, nil, m.Name, "")
+		m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, fmt.Sprintf("%v", id), nil, m.Name, "")
 	}
 	
 	if len(errors) > 0 {
