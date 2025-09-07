@@ -3,10 +3,10 @@ package adminpanel
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
-	"github.com/go-advanced-admin/admin/internal/form/forms"
-	"github.com/go-advanced-admin/admin/internal/logging"
-	"github.com/go-advanced-admin/admin/internal/utils"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/form/forms"
+	"github.com/ovnicraft/go-advanced-admin/internal/logging"
+	"github.com/ovnicraft/go-advanced-admin/internal/utils"
 	"net/http"
 	"reflect"
 )

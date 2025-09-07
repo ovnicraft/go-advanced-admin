@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
 	"html/template"
 	"strings"
 )

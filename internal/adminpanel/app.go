@@ -2,10 +2,10 @@ package adminpanel
 
 import (
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
-	"github.com/go-advanced-admin/admin/internal/form/fields"
-	"github.com/go-advanced-admin/admin/internal/logging"
-	"github.com/go-advanced-admin/admin/internal/utils"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/form/fields"
+	"github.com/ovnicraft/go-advanced-admin/internal/logging"
+	"github.com/ovnicraft/go-advanced-admin/internal/utils"
 	"github.com/google/uuid"
 	"net/http"
 	"reflect"

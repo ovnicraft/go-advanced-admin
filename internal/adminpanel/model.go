@@ -2,7 +2,7 @@ package adminpanel
 
 import (
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/logging"
+	"github.com/ovnicraft/go-advanced-admin/internal/logging"
 	"net/http"
 	"reflect"
 	"strconv"

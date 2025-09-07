@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/go-advanced-admin/admin/internal/form"
-	"github.com/go-advanced-admin/admin/internal/utils"
+	"github.com/ovnicraft/go-advanced-admin/internal/form"
+	"github.com/ovnicraft/go-advanced-admin/internal/utils"
 	"html/template"
 )
 
