@@ -2,10 +2,10 @@
 
 A Highly Customizable Advanced Admin Panel for Go.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/go-advanced-admin/admin)](https://goreportcard.com/report/github.com/go-advanced-admin/admin)
-[![Go](https://github.com/go-advanced-admin/admin/actions/workflows/tests.yml/badge.svg)](https://github.com/go-advanced-admin/admin/actions/workflows/tests.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ovnicraft/go-advanced-admin)](https://goreportcard.com/report/github.com/ovnicraft/go-advanced-admin)
+[![Go](https://github.com/ovnicraft/go-advanced-admin/actions/workflows/tests.yml/badge.svg)](https://github.com/ovnicraft/go-advanced-admin/actions/workflows/tests.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/go-advanced-admin/admin?tab=doc)
+[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/ovnicraft/go-advanced-admin?tab=doc)
 
 Go Advanced Admin is a powerful and highly customizable admin panel for Go applications. It allows developers to 
 quickly create admin interfaces with minimal configuration, supporting multiple web frameworks and ORMs.
@@ -25,7 +25,7 @@ control.
 Add the module to your project by running:
 
 ```sh
-go get github.com/go-advanced-admin/admin
+go get github.com/ovnicraft/go-advanced-admin
 ```
 
 ## Documentation
@@ -41,7 +41,7 @@ Here's a minimal example to get you started:
 package main
 
 import (
-    "github.com/go-advanced-admin/admin"
+    "github.com/ovnicraft/go-advanced-admin"
     "github.com/go-advanced-admin/web-echo"
     "github.com/go-advanced-admin/orm-gorm"
     "github.com/labstack/echo/v4"
