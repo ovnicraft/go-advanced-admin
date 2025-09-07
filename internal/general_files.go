@@ -2,7 +2,7 @@ package internal
 
 import "embed"
 
-//go:embed assets/*
+//go:embed assets
 var AssetsFiles embed.FS
 
 //go:embed templates/*

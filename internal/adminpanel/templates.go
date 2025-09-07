@@ -290,6 +290,13 @@ func (tr *DefaultTemplateRenderer) templateFuncs() template.FuncMap {
 			}
 			return template.HTML(html), nil
 		},
+		"formAsTabler": func(formInstance form.Form, formErrs []error, fieldsErrs map[string][]error) (template.HTML, error) {
+			html, err := form.RenderFormAsTabler(formInstance, formErrs, fieldsErrs)
+			if err != nil {
+				return "", err
+			}
+			return template.HTML(html), nil
+		},
 	}
 }
 

@@ -141,3 +141,79 @@ func RenderFormAsTable(form Form, formErrs []error, fieldsErrs map[string][]erro
 	}
 	return fmt.Sprintf("<table>\n%s\n</table>", strings.Join(htmlStrings, "\n")), nil
 }
+
+func RenderFormAsTabler(form Form, formErrs []error, fieldsErrs map[string][]error) (string, error) {
+	var htmlStrings []string
+	for _, field := range form.GetFields() {
+		fieldHTML, err := field.HTML()
+		if err != nil {
+			return "", err
+		}
+		label := template.HTMLEscapeString(field.GetLabel())
+		fieldErrs, exists := fieldsErrs[field.GetName()]
+
+		// Add required indicator and error styling
+		labelClass := "form-label"
+
+		// Check if field has validation functions (indicating it's required)
+		validationFuncs := field.GetValidationFunctions()
+		if len(validationFuncs) > 0 {
+			labelClass = "form-label required-label"
+		}
+
+		// Add error styling to field HTML if there are errors
+		if exists && len(fieldErrs) > 0 {
+			// Add Bootstrap invalid class to form controls
+			fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-control"`, `class="form-control is-invalid"`)
+			fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-select"`, `class="form-select is-invalid"`)
+		} else {
+			// Ensure form controls have proper Bootstrap classes
+			if !strings.Contains(fieldHTML, `class="`) {
+				fieldHTML = strings.ReplaceAll(fieldHTML, `<input`, `<input class="form-control"`)
+				fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select class="form-select"`)
+				fieldHTML = strings.ReplaceAll(fieldHTML, `<textarea`, `<textarea class="form-control"`)
+			}
+		}
+
+		// Add Select2 and Flatpickr classes for enhanced controls
+		if strings.Contains(fieldHTML, `<select`) && !strings.Contains(fieldHTML, `multiple`) {
+			fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select data-role="select2"`)
+		}
+		if strings.Contains(fieldHTML, `type="date"`) {
+			fieldHTML = strings.ReplaceAll(fieldHTML, `type="date"`, `type="text" data-role="flatpickr"`)
+		}
+		if strings.Contains(fieldHTML, `type="datetime-local"`) {
+			fieldHTML = strings.ReplaceAll(fieldHTML, `type="datetime-local"`, `type="text" data-role="datetimepicker"`)
+		}
+
+		// Render field errors with Bootstrap styling
+		fieldErrors := ""
+		if exists && len(fieldErrs) > 0 {
+			var errorStrings []string
+			for _, err := range fieldErrs {
+				errorStrings = append(errorStrings, template.HTMLEscapeString(err.Error()))
+			}
+			fieldErrors = fmt.Sprintf(`<div class="invalid-feedback d-block">%s</div>`, strings.Join(errorStrings, "<br>"))
+		}
+
+		htmlStrings = append(htmlStrings, fmt.Sprintf(`<div class="mb-3">
+<label class="%s">%s</label>
+%s
+%s
+</div>`, labelClass, label, fieldHTML, fieldErrors))
+	}
+
+	// Render form-level errors
+	if len(formErrs) > 0 {
+		var errorStrings []string
+		for _, err := range formErrs {
+			errorStrings = append(errorStrings, template.HTMLEscapeString(err.Error()))
+		}
+		formErrorsHTML := fmt.Sprintf(`<div class="alert alert-danger" role="alert">
+<ul class="mb-0">%s</ul>
+</div>`, "<li>"+strings.Join(errorStrings, "</li><li>")+"</li>")
+		htmlStrings = append([]string{formErrorsHTML}, htmlStrings...)
+	}
+
+	return strings.Join(htmlStrings, "\n"), nil
+}

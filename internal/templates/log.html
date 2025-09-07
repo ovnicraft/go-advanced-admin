@@ -1,37 +1,78 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Log Entries administration</title>
-        <link rel="stylesheet" href="{{ assetPath "sample.css" }}">
-        <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    </head>
-    <body>
-        <h2>Models Sidepanel</h2>
-        <ul>
-            {{ range .apps }}
-                <li><a href="{{ .app.GetFullLink }}">{{ .app.DisplayName }}</a>
-                    <ul>
-                        {{ range .models }}
-                            {{ if .permissions.Read }}
-                                <li><a href="{{ .model.GetFullLink }}">{{ .model.DisplayName }}</a>  -- <a href="{{ .model.GetFullLink }}">View</a>{{ if .permissions.Create }}  -- <a href="{{ .model.GetFullAddLink }}">Add</a>{{ end }}</li>
-                            {{ end }}
-                        {{ end }}
-                    </ul>
-                </li>
-            {{ end }}
-        </ul>
-        <h2>Log Details</h2>
-        <ul>
-            <li>ID: {{ .log.ID }}</li>
-            <li>Action Time: {{ .log.ActionTime }}</li>
-            <li>User ID: {{ .log.UserID }}</li>
-            <li>User Repr: {{ .log.UserRepr }}</li>
-            <li>Content Type: {{ .log.ContentType }}</li>
-            <li>Object ID: {{ .log.ObjectID }}</li>
-            <li>Object Repr: {{ .log.ObjectRepr }}</li>
-            <li>Action Flag: {{ .log.ActionFlag }}</li>
-            <li>Message: {{ .log.Message }}</li>
-        </ul>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Entry - Administration</title>
+    {{ template "header" . }}
+</head>
+<body>
+    <div class="page">
+        {{ template "sidebar" . }}
+        
+        <div class="page-wrapper">
+            {{ template "navbar" . }}
+            
+            <div class="page-body">
+                <div class="container-xl">
+                    <!-- Page header -->
+                    <div class="page-header d-print-none">
+                        <div class="container-xl">
+                            <div class="row g-2 align-items-center">
+                                <div class="col">
+                                    <nav aria-label="breadcrumb">
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item"><a href="{{ .admin.GetFullLink }}">Home</a></li>
+                                            <li class="breadcrumb-item active">Log Entry</li>
+                                        </ol>
+                                    </nav>
+                                    <h2 class="page-title">
+                                        Log Entry
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Page body -->
+                    <div class="page-body">
+                        <div class="container-xl">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Log Details</h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <dl class="row">
+                                                <dt class="col-sm-3">ID</dt>
+                                                <dd class="col-sm-9">{{ .log.ID }}</dd>
+                                                <dt class="col-sm-3">Action Time</dt>
+                                                <dd class="col-sm-9">{{ .log.ActionTime }}</dd>
+                                                <dt class="col-sm-3">User ID</dt>
+                                                <dd class="col-sm-9">{{ .log.UserID }}</dd>
+                                                <dt class="col-sm-3">User Repr</dt>
+                                                <dd class="col-sm-9">{{ .log.UserRepr }}</dd>
+                                                <dt class="col-sm-3">Content Type</dt>
+                                                <dd class="col-sm-9">{{ .log.ContentType }}</dd>
+                                                <dt class="col-sm-3">Object ID</dt>
+                                                <dd class="col-sm-9">{{ .log.ObjectID }}</dd>
+                                                <dt class="col-sm-3">Object Repr</dt>
+                                                <dd class="col-sm-9">{{ .log.ObjectRepr }}</dd>
+                                                <dt class="col-sm-3">Action Flag</dt>
+                                                <dd class="col-sm-9">{{ .log.ActionFlag }}</dd>
+                                                <dt class="col-sm-3">Message</dt>
+                                                <dd class="col-sm-9">{{ .log.Message }}</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "footer" . }}
+</body>
 </html>

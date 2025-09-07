@@ -1,34 +1,68 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>{{ .model.DisplayName }} administration</title>
-        <link rel="stylesheet" href="{{ assetPath "sample.css" }}">
-        <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    </head>
-    <body>
-        <p><a href="{{ .model.App.Panel.GetFullLink }}">Home</a> > <a href="{{ .model.App.GetFullLink }}">{{ .model.App.DisplayName }}</a> > <a href="{{ .model.GetFullLink }}">{{ .model.DisplayName }}</a> > instance</p>
-        <h2>Models Sidepanel</h2>
-        <ul>
-            {{ range .apps }}
-                <li><a href="{{ .app.GetFullLink }}">{{ .app.DisplayName }}</a>
-                    <ul>
-                        {{ range .models }}
-                            {{ if .permissions.Read }}
-                                <li><a href="{{ .model.GetFullLink }}">{{ .model.DisplayName }}</a>  -- <a href="{{ .model.GetFullLink }}">View</a>{{ if .permissions.Create }}  -- <a href="{{ .model.GetFullAddLink }}">Add</a>{{ end }}</li>
-                            {{ end }}
-                        {{ end }}
-                    </ul>
-                </li>
-            {{ end }}
-        </ul>
-        <h2>{{ .model.DisplayName }} Details</h2>
-        <ul>
-            {{ range $index, $fieldConfig := .model.Fields }}
-                {{ if $fieldConfig.IncludeInInstanceView }}
-                    <li>{{ $fieldConfig.DisplayName }}: {{ with $val := getFieldValue $.instance $fieldConfig.Name }}{{ $val }}{{ else }}<span>Field not available</span>{{ end }}</li>
-                {{ end }}
-            {{ end }}
-        </ul>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .model.DisplayName }} - Administration</title>
+    {{ template "header" . }}
+</head>
+<body>
+    <div class="page">
+        {{ template "sidebar" . }}
+        
+        <div class="page-wrapper">
+            {{ template "navbar" . }}
+            
+            <div class="page-body">
+                <div class="container-xl">
+                    <!-- Page header -->
+                    <div class="page-header d-print-none">
+                        <div class="container-xl">
+                            <div class="row g-2 align-items-center">
+                                <div class="col">
+                                    <nav aria-label="breadcrumb">
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item"><a href="{{ .model.App.Panel.GetFullLink }}">Home</a></li>
+                                            <li class="breadcrumb-item"><a href="{{ .model.App.GetFullLink }}">{{ .model.App.DisplayName }}</a></li>
+                                            <li class="breadcrumb-item"><a href="{{ .model.GetFullLink }}">{{ .model.DisplayName }}</a></li>
+                                            <li class="breadcrumb-item active">Instance</li>
+                                        </ol>
+                                    </nav>
+                                    <h2 class="page-title">
+                                        {{ .model.DisplayName }} Instance
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Page body -->
+                    <div class="page-body">
+                        <div class="container-xl">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Instance Details</h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <dl class="row">
+                                                {{ range $index, $fieldConfig := .model.Fields }}
+                                                    {{ if $fieldConfig.IncludeInInstanceView }}
+                                                        <dt class="col-sm-3">{{ $fieldConfig.DisplayName }}</dt>
+                                                        <dd class="col-sm-9">{{ with $val := getFieldValue $.instance $fieldConfig.Name }}{{ $val }}{{ else }}<span>-</span>{{ end }}</dd>
+                                                    {{ end }}
+                                                {{ end }}
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ template "footer" . }}
+</body>
 </html>
