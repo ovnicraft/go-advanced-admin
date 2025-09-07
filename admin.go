@@ -3,7 +3,7 @@ package admin
 import "github.com/ovnicraft/go-advanced-admin/internal/adminpanel"
 
 // Version of the go-advanced-admin library
-const Version = "1.0.0"
+const Version = "1.0.2"
 
 // ORMIntegrator defines the interface for ORM integrations with the admin panel.
 type ORMIntegrator = adminpanel.ORMIntegrator
@@ -37,3 +37,15 @@ var NewPanel = adminpanel.NewAdminPanel
 
 // TemplateRenderer defines the interface for rendering templates in the admin panel.
 type TemplateRenderer = adminpanel.TemplateRenderer
+
+// JSONHandlerFunc represents a handler function for JSON responses.
+type JSONHandlerFunc = adminpanel.JSONHandlerFunc
+
+// JSONResponse represents a standard JSON response structure.
+type JSONResponse = adminpanel.JSONResponse
+
+// NewErrorResponse creates a new error response.
+var NewErrorResponse = adminpanel.NewErrorResponse
+
+// NewSuccessResponse creates a new success response.
+var NewSuccessResponse = adminpanel.NewSuccessResponse
