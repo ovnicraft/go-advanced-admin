@@ -2,16 +2,17 @@ module github.com/ovnicraft/go-advanced-admin/example
 
 go 1.23.1
 
-replace github.com/ovnicraft/go-advanced-admin => ./../
 
 require (
 	github.com/glebarez/sqlite v1.11.0
-	github.com/ovnicraft/go-advanced-admin v0.0.0
+	github.com/ovnicraft/go-advanced-admin v1.0.2
 	github.com/go-advanced-admin/orm-gorm v0.0.1
 	github.com/go-advanced-admin/web-echo v0.0.1
 	github.com/labstack/echo/v4 v4.12.0
 	gorm.io/gorm v1.25.12
 )
+
+replace github.com/ovnicraft/go-advanced-admin => ../..
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
