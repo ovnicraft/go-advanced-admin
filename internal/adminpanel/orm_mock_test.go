@@ -43,3 +43,7 @@ func (m *MockORMIntegrator) CreateInstanceOnlyFields(interface{}, []string) erro
 func (m *MockORMIntegrator) UpdateInstanceOnlyFields(interface{}, []string, interface{}) error {
 	return nil
 }
+
+// Newer interface methods (AJAX helpers)
+func (m *MockORMIntegrator) GetAll(interface{}) (interface{}, error)   { return []interface{}{}, nil }
+func (m *MockORMIntegrator) DeleteByID(interface{}, interface{}) error { return nil }

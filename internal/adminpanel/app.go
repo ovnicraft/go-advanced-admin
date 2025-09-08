@@ -230,93 +230,112 @@ func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
 func buildFormField(underlyingType reflect.Type, fieldType reflect.Type, tag string) (form.Field, error) {
 	switch underlyingType.Kind() {
 	case reflect.String:
-		tf := &fields.TextField{}
-		forEachTag(tag, func(key, value string) {
-			switch key {
-			case "placeholder":
-				tf.Placeholder = &value
-			case "required":
-				tf.Required = true
-			case "regex":
-				tf.Regex = &value
-			case "maxLength":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
-					if vv, ok := v.(uint); ok {
-						tf.MaxLength = &vv
-					}
-				}
-			case "minLength":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
-					if vv, ok := v.(uint); ok {
-						tf.MinLength = &vv
-					}
-				}
-			}
-		})
-		return tf, nil
+		return configureTextField(tag), nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		tf := &fields.IntegerField{}
-		forEachTag(tag, func(key, value string) {
-			switch key {
-			case "required":
-				tf.Required = true
-			case "max":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
-					if vv, ok := v.(int); ok {
-						tf.MaxValue = &vv
-					}
-				}
-			case "min":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
-					if vv, ok := v.(int); ok {
-						tf.MinValue = &vv
-					}
-				}
-			}
-		})
-		return tf, nil
+		return configureIntegerField(tag), nil
 	case reflect.Float32, reflect.Float64:
-		tf := &fields.FloatField{}
-		forEachTag(tag, func(key, value string) {
-			switch key {
-			case "required":
-				tf.Required = true
-			case "max":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
-					if vv, ok := v.(float64); ok {
-						tf.MaxValue = &vv
-					}
-				}
-			case "min":
-				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
-					if vv, ok := v.(float64); ok {
-						tf.MinValue = &vv
-					}
+		return configureFloatField(tag), nil
+	case reflect.Bool:
+		return configureBooleanField(tag), nil
+	default:
+		return configureUUIDField(tag, fieldType == reflect.TypeOf(uuid.UUID{})), nil
+	}
+}
+
+func configureTextField(tag string) *fields.TextField {
+	tf := &fields.TextField{}
+	forEachTag(tag, func(key, value string) {
+		switch key {
+		case "placeholder":
+			tf.Placeholder = &value
+		case "required":
+			tf.Required = true
+		case "regex":
+			tf.Regex = &value
+		case "maxLength":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
+				if vv, ok := v.(uint); ok {
+					tf.MaxLength = &vv
 				}
 			}
-		})
-		return tf, nil
-	case reflect.Bool:
-		tf := &fields.BooleanField{}
+		case "minLength":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
+				if vv, ok := v.(uint); ok {
+					tf.MinLength = &vv
+				}
+			}
+		}
+	})
+	return tf
+}
+
+func configureIntegerField(tag string) *fields.IntegerField {
+	tf := &fields.IntegerField{}
+	forEachTag(tag, func(key, value string) {
+		switch key {
+		case "required":
+			tf.Required = true
+		case "max":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
+				if vv, ok := v.(int); ok {
+					tf.MaxValue = &vv
+				}
+			}
+		case "min":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
+				if vv, ok := v.(int); ok {
+					tf.MinValue = &vv
+				}
+			}
+		}
+	})
+	return tf
+}
+
+func configureFloatField(tag string) *fields.FloatField {
+	tf := &fields.FloatField{}
+	forEachTag(tag, func(key, value string) {
+		switch key {
+		case "required":
+			tf.Required = true
+		case "max":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
+				if vv, ok := v.(float64); ok {
+					tf.MaxValue = &vv
+				}
+			}
+		case "min":
+			if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
+				if vv, ok := v.(float64); ok {
+					tf.MinValue = &vv
+				}
+			}
+		}
+	})
+	return tf
+}
+
+func configureBooleanField(tag string) *fields.BooleanField {
+	tf := &fields.BooleanField{}
+	forEachTag(tag, func(key, _ string) {
+		if key == "required" {
+			tf.Required = true
+		}
+	})
+	return tf
+}
+
+func configureUUIDField(tag string, isUUID bool) *fields.UUIDField {
+	tf := &fields.UUIDField{}
+	if isUUID {
 		forEachTag(tag, func(key, _ string) {
 			if key == "required" {
 				tf.Required = true
 			}
 		})
-		return tf, nil
-	default:
-		// Default to UUID field for unknown types; only apply tags if actual UUID
-		tf := &fields.UUIDField{}
-		if fieldType == reflect.TypeOf(uuid.UUID{}) {
-			forEachTag(tag, func(key, _ string) {
-				if key == "required" {
-					tf.Required = true
-				}
-			})
-		}
-		return tf, nil
 	}
+	return tf
 }
 
 func applyInitialValueTag(f form.Field, tag string, typ reflect.Type) error {

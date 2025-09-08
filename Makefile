@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 GO := go
 
-.PHONY: fmt format
+.PHONY: fmt format vet
 
 # Format all Go code in the repository
 fmt:
@@ -12,3 +12,7 @@ fmt:
 # Alias for fmt
 format: fmt
 	@:
+
+vet:
+	@echo "Vet code..."
+	@$(GO) vet ./...

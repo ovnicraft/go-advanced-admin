@@ -440,9 +440,9 @@ func (m *Model) GetAddHandler() HandlerFunc {
 
 		method := m.App.Panel.Web.GetRequestMethod(data)
 		switch method {
-		case http.MethodGet, "GET":
+		case http.MethodGet:
 			return m.renderNewInstanceGET(data, formInstance)
-		case http.MethodPost, "POST":
+		case http.MethodPost:
 			return m.processNewInstancePOST(data, formInstance)
 		default:
 			return GetErrorHTML(http.StatusMethodNotAllowed, fmt.Errorf("method not allowed"))
@@ -610,9 +610,9 @@ func (m *Model) GetEditHandler() HandlerFunc {
 
 		method := m.App.Panel.Web.GetRequestMethod(data)
 		switch method {
-		case http.MethodGet, "GET":
+		case http.MethodGet:
 			return m.renderEditGET(data, formInstance)
-		case http.MethodPost, "POST":
+		case http.MethodPost:
 			return m.processEditPOST(data, formInstance)
 		default:
 			return GetErrorHTML(http.StatusMethodNotAllowed, fmt.Errorf("method not allowed"))
