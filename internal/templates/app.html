@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ .app.DisplayName }} - Administration</title>
-    {{ template "header" . }}
-</head>
-<body>
-    <div class="page">
-        {{ template "sidebar" . }}
-        
+{{ template "header" . }}
+{{ template "sidebar" . }}
+
         <div class="page-wrapper">
             {{ template "navbar" . }}
             
@@ -64,7 +56,4 @@
                 </div>
             </div>
         </div>
-    </div>
-    {{ template "footer" . }}
-</body>
-</html>
+{{ template "footer" . }}
