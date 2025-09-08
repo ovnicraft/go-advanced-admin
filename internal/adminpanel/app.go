@@ -76,7 +76,6 @@ func (a *App) RegisterModel(model interface{}, orm ORMIntegrator) (*Model, error
 	for i := 0; i < modelType.NumField(); i++ {
 		field := modelType.Field(i)
 		fieldName := field.Name
-
 		fieldType := field.Type
 
 		isPointer := false
@@ -86,298 +85,51 @@ func (a *App) RegisterModel(model interface{}, orm ORMIntegrator) (*Model, error
 			underlyingType = fieldType.Elem()
 		}
 
-		fieldDisplayName := utils.HumanizeName(fieldName)
-		includeInList := true
-		includeInFetch := true
-		includeInSearch := true
-		includeInInstanceView := true
-		includeInAddForm := true
-		includeInEditForm := true
-		var formAddField form.Field
-		var formEditField form.Field
-
 		tag := field.Tag.Get("admin")
-		if tag != "" {
-			listFetchTagPresent := false
-			parsedTags := strings.Split(tag, ";")
-			for _, t := range parsedTags {
-				pair := strings.SplitN(t, ":", 2)
-				var key, value string
-				if len(pair) >= 2 {
-					key, value = pair[0], pair[1]
-				} else {
-					key = pair[0]
-				}
-
-				switch key {
-				case "listDisplay":
-					if value == "exclude" {
-						includeInList = false
-					} else if value == "include" {
-						includeInList = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'listDisplay' tag: %s", value)
-					}
-				case "listFetch":
-					listFetchTagPresent = true
-					if value == "exclude" {
-						includeInFetch = false
-					} else if value == "include" {
-						includeInFetch = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'listFetch' tag: %s", value)
-					}
-				case "search":
-					if value == "exclude" {
-						includeInSearch = false
-					} else if value == "include" {
-						includeInSearch = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'search' tag: %s", value)
-					}
-				case "view":
-					if value == "exclude" {
-						includeInInstanceView = false
-					} else if value == "include" {
-						includeInInstanceView = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'view' tag: %s", value)
-					}
-				case "addForm":
-					if value == "exclude" {
-						includeInAddForm = false
-					} else if value == "include" {
-						includeInAddForm = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'addForm' tag: %s", value)
-					}
-				case "editForm":
-					if value == "exclude" {
-						includeInEditForm = false
-					} else if value == "include" {
-						includeInEditForm = true
-					} else {
-						return nil, fmt.Errorf("invalid value for 'editForm' tag: %s", value)
-					}
-				case "displayName":
-					fieldDisplayName = value
-				}
-			}
-			if !listFetchTagPresent {
-				if fieldName == "ID" {
-					includeInFetch = true
-				} else {
-					includeInFetch = includeInList
-				}
-			}
+		opts, err := parseInclusionTags(tag, fieldName)
+		if err != nil {
+			return nil, err
 		}
 
 		var formField form.Field
-		if includeInAddForm || includeInEditForm {
-			switch underlyingType.Kind() {
-			case reflect.String:
-				formField = &fields.TextField{}
-				if tag != "" {
-					parsedTags := strings.Split(tag, ";")
-					for _, t := range parsedTags {
-						pair := strings.SplitN(t, ":", 2)
-						var key, value string
-						if len(pair) >= 2 {
-							key, value = pair[0], pair[1]
-						} else {
-							key = pair[0]
-						}
-
-						switch key {
-						case "placeholder":
-							formField.(*fields.TextField).Placeholder = &value
-						case "required":
-							formField.(*fields.TextField).Required = true
-						case "regex":
-							formField.(*fields.TextField).Regex = &value
-						case "maxLength":
-							maxLengthInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0)))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							maxLength, ok := maxLengthInterface.(uint)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.TextField).MaxLength = &maxLength
-						case "minLength":
-							minLengthInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0)))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							minLength, ok := minLengthInterface.(uint)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.TextField).MinLength = &minLength
-						}
-					}
-				}
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-				formField = &fields.IntegerField{}
-				if tag != "" {
-					parsedTags := strings.Split(tag, ";")
-					for _, t := range parsedTags {
-						pair := strings.SplitN(t, ":", 2)
-						var key, value string
-						if len(pair) >= 2 {
-							key, value = pair[0], pair[1]
-						} else {
-							key = pair[0]
-						}
-
-						switch key {
-						case "required":
-							formField.(*fields.IntegerField).Required = true
-						case "max":
-							maxInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(0))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							maxValue, ok := maxInterface.(int)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.IntegerField).MaxValue = &maxValue
-						case "min":
-							minInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(0))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							minValue, ok := minInterface.(int)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.IntegerField).MinValue = &minValue
-						}
-					}
-				}
-			case reflect.Float32, reflect.Float64:
-				formField = &fields.FloatField{}
-				if tag != "" {
-					parsedTags := strings.Split(tag, ";")
-					for _, t := range parsedTags {
-						pair := strings.SplitN(t, ":", 2)
-						var key, value string
-						if len(pair) >= 2 {
-							key, value = pair[0], pair[1]
-						} else {
-							key = pair[0]
-						}
-
-						switch key {
-						case "required":
-							formField.(*fields.FloatField).Required = true
-						case "max":
-							maxInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0)))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							maxValue, ok := maxInterface.(float64)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.FloatField).MaxValue = &maxValue
-						case "min":
-							minInterface, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0)))
-							if err != nil {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							minValue, ok := minInterface.(float64)
-							if !ok {
-								return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-							}
-							formField.(*fields.FloatField).MinValue = &minValue
-						}
-					}
-				}
-			case reflect.Bool:
-				formField = &fields.BooleanField{}
-				if tag != "" {
-					parsedTags := strings.Split(tag, ";")
-					for _, t := range parsedTags {
-						pair := strings.SplitN(t, ":", 2)
-						key := pair[0]
-
-						switch key {
-						case "required":
-							formField.(*fields.BooleanField).Required = true
-						}
-					}
-				}
-			default:
-				formField = &fields.UUIDField{}
-				if fieldType == reflect.TypeOf(uuid.UUID{}) {
-					if tag != "" {
-						parsedTags := strings.Split(tag, ";")
-						for _, t := range parsedTags {
-							pair := strings.SplitN(t, ":", 2)
-							key := pair[0]
-
-							switch key {
-							case "required":
-								formField.(*fields.UUIDField).Required = true
-							}
-						}
-					}
-				}
+		if opts.includeInAddForm || opts.includeInEditForm {
+			formField, err = buildFormField(underlyingType, fieldType, tag)
+			if err != nil {
+				return nil, err
 			}
-			if formField != nil && tag != "" {
-				parsedTags := strings.Split(tag, ";")
-				for _, t := range parsedTags {
-					pair := strings.SplitN(t, ":", 2)
-					var key, value string
-					if len(pair) >= 2 {
-						key, value = pair[0], pair[1]
-					} else {
-						key = pair[0]
-					}
-
-					switch key {
-					case "initial":
-						convertedValue, err := utils.ConvertStringToType(value, underlyingType)
-						if err != nil {
-							return nil, fmt.Errorf("error converting value '%s' to type '%s': %w", value, underlyingType.Name(), err)
-						}
-						formField.RegisterInitialValue(convertedValue)
-					}
+			if formField != nil {
+				if err := applyInitialValueTag(formField, tag, underlyingType); err != nil {
+					return nil, err
 				}
 			}
 		}
 
-		if includeInAddForm {
+		var formAddField, formEditField form.Field
+		if opts.includeInAddForm {
 			formAddField = formField
 		}
-		if includeInEditForm {
+		if opts.includeInEditForm {
 			formEditField = formField
 		}
 
-		fieldGenerator, implemented := model.(AdminFormFieldInterface)
-		if implemented {
-			formFieldForAdd := fieldGenerator.AdminFormField(fieldName, false)
-			if formFieldForAdd != nil {
-				formAddField = formFieldForAdd
+		if gen, ok := model.(AdminFormFieldInterface); ok {
+			if ff := gen.AdminFormField(fieldName, false); ff != nil {
+				formAddField = ff
 			}
-			formFieldForEdit := fieldGenerator.AdminFormField(fieldName, true)
-			if formFieldForEdit != nil {
-				formEditField = formFieldForEdit
+			if ff := gen.AdminFormField(fieldName, true); ff != nil {
+				formEditField = ff
 			}
 		}
 
 		fieldConfigs = append(fieldConfigs, FieldConfig{
 			Name:                  fieldName,
-			DisplayName:           fieldDisplayName,
+			DisplayName:           opts.fieldDisplayName,
 			FieldType:             underlyingType,
 			IsPointer:             isPointer,
-			IncludeInListDisplay:  includeInList,
-			IncludeInListFetch:    includeInFetch,
-			IncludeInSearch:       includeInSearch,
-			IncludeInInstanceView: includeInInstanceView,
+			IncludeInListDisplay:  opts.includeInList,
+			IncludeInListFetch:    opts.includeInFetch,
+			IncludeInSearch:       opts.includeInSearch,
+			IncludeInInstanceView: opts.includeInInstanceView,
 			AddFormField:          formAddField,
 			EditFormField:         formEditField,
 		})
@@ -401,6 +153,185 @@ func (a *App) RegisterModel(model interface{}, orm ORMIntegrator) (*Model, error
 	a.ModelsSlice = append(a.ModelsSlice, modelInstance)
 	a.Models[name] = modelInstance
 	return modelInstance, nil
+}
+
+// ---- Helpers to reduce RegisterModel complexity ----
+
+type tagOptions struct {
+	includeInList         bool
+	includeInFetch        bool
+	includeInSearch       bool
+	includeInInstanceView bool
+	includeInAddForm      bool
+	includeInEditForm     bool
+	fieldDisplayName      string
+}
+
+func forEachTag(tag string, fn func(key, value string)) {
+	if tag == "" {
+		return
+	}
+	parts := strings.Split(tag, ";")
+	for _, t := range parts {
+		kv := strings.SplitN(t, ":", 2)
+		if len(kv) == 2 {
+			fn(kv[0], kv[1])
+		} else if len(kv) == 1 {
+			fn(kv[0], "")
+		}
+	}
+}
+
+func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
+	opts := tagOptions{
+		includeInList:         true,
+		includeInFetch:        true,
+		includeInSearch:       true,
+		includeInInstanceView: true,
+		includeInAddForm:      true,
+		includeInEditForm:     true,
+		fieldDisplayName:      utils.HumanizeName(fieldName),
+	}
+
+	listFetchTagPresent := false
+	forEachTag(tag, func(key, value string) {
+		switch key {
+		case "listDisplay":
+			opts.includeInList = (value == "include") || (value == "")
+			if value == "exclude" {
+				opts.includeInList = false
+			}
+		case "listFetch":
+			listFetchTagPresent = true
+			opts.includeInFetch = (value != "exclude")
+		case "search":
+			opts.includeInSearch = (value != "exclude")
+		case "view":
+			opts.includeInInstanceView = (value != "exclude")
+		case "addForm":
+			opts.includeInAddForm = (value != "exclude")
+		case "editForm":
+			opts.includeInEditForm = (value != "exclude")
+		case "displayName":
+			opts.fieldDisplayName = value
+		}
+	})
+
+	if !listFetchTagPresent {
+		if fieldName == "ID" {
+			opts.includeInFetch = true
+		} else {
+			opts.includeInFetch = opts.includeInList
+		}
+	}
+	return opts, nil
+}
+
+func buildFormField(underlyingType reflect.Type, fieldType reflect.Type, tag string) (form.Field, error) {
+	switch underlyingType.Kind() {
+	case reflect.String:
+		tf := &fields.TextField{}
+		forEachTag(tag, func(key, value string) {
+			switch key {
+			case "placeholder":
+				tf.Placeholder = &value
+			case "required":
+				tf.Required = true
+			case "regex":
+				tf.Regex = &value
+			case "maxLength":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
+					if vv, ok := v.(uint); ok {
+						tf.MaxLength = &vv
+					}
+				}
+			case "minLength":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(uint(0))); err == nil {
+					if vv, ok := v.(uint); ok {
+						tf.MinLength = &vv
+					}
+				}
+			}
+		})
+		return tf, nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		tf := &fields.IntegerField{}
+		forEachTag(tag, func(key, value string) {
+			switch key {
+			case "required":
+				tf.Required = true
+			case "max":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
+					if vv, ok := v.(int); ok {
+						tf.MaxValue = &vv
+					}
+				}
+			case "min":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(0)); err == nil {
+					if vv, ok := v.(int); ok {
+						tf.MinValue = &vv
+					}
+				}
+			}
+		})
+		return tf, nil
+	case reflect.Float32, reflect.Float64:
+		tf := &fields.FloatField{}
+		forEachTag(tag, func(key, value string) {
+			switch key {
+			case "required":
+				tf.Required = true
+			case "max":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
+					if vv, ok := v.(float64); ok {
+						tf.MaxValue = &vv
+					}
+				}
+			case "min":
+				if v, err := utils.ConvertStringToType(value, reflect.TypeOf(float64(0))); err == nil {
+					if vv, ok := v.(float64); ok {
+						tf.MinValue = &vv
+					}
+				}
+			}
+		})
+		return tf, nil
+	case reflect.Bool:
+		tf := &fields.BooleanField{}
+		forEachTag(tag, func(key, _ string) {
+			if key == "required" {
+				tf.Required = true
+			}
+		})
+		return tf, nil
+	default:
+		// Default to UUID field for unknown types; only apply tags if actual UUID
+		tf := &fields.UUIDField{}
+		if fieldType == reflect.TypeOf(uuid.UUID{}) {
+			forEachTag(tag, func(key, _ string) {
+				if key == "required" {
+					tf.Required = true
+				}
+			})
+		}
+		return tf, nil
+	}
+}
+
+func applyInitialValueTag(f form.Field, tag string, typ reflect.Type) error {
+	var convErr error
+	forEachTag(tag, func(key, value string) {
+		if key == "initial" {
+			v, err := utils.ConvertStringToType(value, typ)
+			if err != nil {
+				convErr = fmt.Errorf("error converting value '%s' to type '%s': %w", value, typ.Name(), err)
+				return
+			}
+			f.RegisterInitialValue(v)
+		}
+	})
+	return convErr
 }
 
 // GetHandler returns the HTTP handler function for the app's main page.

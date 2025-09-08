@@ -63,28 +63,77 @@ func (m *Model) GetFullAddLink() string {
 	return m.App.Panel.Config.GetLink(m.GetAddLink())
 }
 
+// helper: pagination parameters
+func getPagination(m *Model, data interface{}) (uint, uint) {
+	pageQuery := m.App.Panel.Web.GetQueryParam(data, "page")
+	perPageQuery := m.App.Panel.Web.GetQueryParam(data, "perPage")
+
+	var page, perPage uint
+	if p, err := strconv.Atoi(pageQuery); err == nil {
+		page = uint(p)
+	} else {
+		page = 1
+	}
+	if pp, err := strconv.Atoi(perPageQuery); err == nil {
+		perPage = uint(pp)
+	} else {
+		perPage = m.App.Panel.Config.DefaultInstancesPerPage
+	}
+	if perPage < 10 {
+		perPage = 10
+	}
+	return page, perPage
+}
+
+func getFieldsToFetch(m *Model) []string {
+	var fields []string
+	for _, fc := range m.Fields {
+		if fc.IncludeInListFetch {
+			fields = append(fields, fc.Name)
+		}
+	}
+	return fields
+}
+
+func getFieldsToSearch(m *Model) []string {
+	var fields []string
+	for _, fc := range m.Fields {
+		if fc.IncludeInSearch {
+			fields = append(fields, fc.Name)
+		}
+	}
+	return fields
+}
+
+func buildCleanInstances(m *Model, data interface{}, instances []interface{}) ([]Instance, error) {
+	clean := make([]Instance, len(instances))
+	for i, instance := range instances {
+		id, err := m.GetPrimaryKeyValue(instance)
+		if err != nil {
+			return nil, err
+		}
+		updateAllowed, err := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, id, data)
+		if err != nil {
+			return nil, err
+		}
+		deleteAllowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, data)
+		if err != nil {
+			return nil, err
+		}
+		clean[i] = Instance{
+			InstanceID:  id,
+			Data:        instance,
+			Model:       m,
+			Permissions: Permissions{Read: true, Update: updateAllowed, Delete: deleteAllowed},
+		}
+	}
+	return clean, nil
+}
+
 // GetViewHandler returns the HTTP handler function for the model's list view.
 func (m *Model) GetViewHandler() HandlerFunc {
 	return func(data interface{}) (uint, string) {
-		var page, perPage uint
-		pageQuery := m.App.Panel.Web.GetQueryParam(data, "page")
-		perPageQuery := m.App.Panel.Web.GetQueryParam(data, "perPage")
-
-		if p, err := strconv.Atoi(pageQuery); err == nil {
-			page = uint(p)
-		} else {
-			page = 1
-		}
-
-		if pp, err := strconv.Atoi(perPageQuery); err == nil {
-			perPage = uint(pp)
-		} else {
-			perPage = m.App.Panel.Config.DefaultInstancesPerPage
-		}
-
-		if perPage < 10 {
-			perPage = 10
-		}
+		page, perPage := getPagination(m, data)
 
 		allowed, err := m.App.Panel.PermissionChecker.HasModelReadPermission(m.App.Name, m.Name, data)
 		if err != nil {
@@ -99,24 +148,14 @@ func (m *Model) GetViewHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-		var fieldsToFetch []string
-		for _, fieldConfig := range m.Fields {
-			if fieldConfig.IncludeInListFetch {
-				fieldsToFetch = append(fieldsToFetch, fieldConfig.Name)
-			}
-		}
+		fieldsToFetch := getFieldsToFetch(m)
 
 		searchQuery := m.App.Panel.Web.GetQueryParam(data, "search")
 		var instances interface{}
 		if searchQuery == "" {
 			instances, err = m.GetORM().FetchInstancesOnlyFields(m.PTR, fieldsToFetch)
 		} else {
-			var fieldsToSearch []string
-			for _, fieldConfig := range m.Fields {
-				if fieldConfig.IncludeInSearch {
-					fieldsToSearch = append(fieldsToSearch, fieldConfig.Name)
-				}
-			}
+			fieldsToSearch := getFieldsToSearch(m)
 			instances, err = m.GetORM().FetchInstancesOnlyFieldWithSearch(m.PTR, fieldsToFetch, searchQuery, fieldsToSearch)
 		}
 		if err != nil {
@@ -143,27 +182,9 @@ func (m *Model) GetViewHandler() HandlerFunc {
 
 		pagedInstances := filteredInstances[startIndex:endIndex]
 
-		cleanInstances := make([]Instance, len(pagedInstances))
-		for i, instance := range pagedInstances {
-			id, err := m.GetPrimaryKeyValue(instance)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			updateAllowed, err := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, id, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			deleteAllowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			cleanInstance := Instance{
-				InstanceID:  id,
-				Data:        instance,
-				Model:       m,
-				Permissions: Permissions{Read: true, Update: updateAllowed, Delete: deleteAllowed},
-			}
-			cleanInstances[i] = cleanInstance
+		cleanInstances, err := buildCleanInstances(m, data, pagedInstances)
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
 		html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{

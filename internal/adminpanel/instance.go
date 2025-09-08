@@ -439,108 +439,101 @@ func (m *Model) GetAddHandler() HandlerFunc {
 		}
 
 		method := m.App.Panel.Web.GetRequestMethod(data)
-		if method == "GET" {
-			apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
-				"admin":       m.App.Panel,
-				"apps":        apps,
-				"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-				"form":        formInstance,
-				"model":       m,
-				"formErrs":    make([]error, 0),
-				"fieldErrs":   make(map[string][]error),
-			})
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			return http.StatusOK, html
-		} else if method == "POST" {
-			formData := m.App.Panel.Web.GetFormData(data)
-			if formData == nil {
-				return GetErrorHTML(http.StatusBadRequest, fmt.Errorf("form data is required"))
-			}
-			convertedFormData, err := form.ConvertFormDataToHTMLTypeMap(formData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			cleanFormData, err := form.GetCleanData(formInstance, convertedFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			formErrs, fieldErrs, err := form.ValuesAreValid(formInstance, cleanFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			containsError := false
-			if len(formErrs) > 0 {
-				containsError = true
-			}
-			for _, errs := range fieldErrs {
-				if len(errs) > 0 {
-					containsError = true
-					break
-				}
-			}
-
-			if containsError {
-				err = formInstance.RegisterInitialValues(cleanFormData)
-
-				apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
-				if err != nil {
-					return GetErrorHTML(http.StatusInternalServerError, err)
-				}
-
-				html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
-					"admin":       m.App.Panel,
-					"apps":        apps,
-					"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-					"form":        formInstance,
-					"model":       m,
-					"formErrs":    formErrs,
-					"fieldErrs":   fieldErrs,
-				})
-				if err != nil {
-					return GetErrorHTML(http.StatusInternalServerError, err)
-				}
-				return http.StatusOK, html
-			}
-
-			instanceInterface, err := formInstance.Save(convertedFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			instance := instanceInterface
-			instanceID, err := m.GetPrimaryKeyValue(instance)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			if instanceID == nil {
-				return GetErrorHTML(http.StatusInternalServerError, fmt.Errorf("instance id is nil"))
-			}
-
-			instanceLink := fmt.Sprintf("%s/%v/view", m.GetFullLink(), instanceID)
-
-			instanceInstance := &Instance{
-				InstanceID: instanceID,
-				Data:       instance,
-				Model:      m,
-			}
-
-			err = instanceInstance.CreateCreateLog(data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			return http.StatusSeeOther, instanceLink
-		} else {
+		switch method {
+		case http.MethodGet, "GET":
+			return m.renderNewInstanceGET(data, formInstance)
+		case http.MethodPost, "POST":
+			return m.processNewInstancePOST(data, formInstance)
+		default:
 			return GetErrorHTML(http.StatusMethodNotAllowed, fmt.Errorf("method not allowed"))
 		}
 	}
+}
+
+func (m *Model) renderNewInstanceGET(data interface{}, formInstance form.Form) (uint, string) {
+	apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
+		"admin":       m.App.Panel,
+		"apps":        apps,
+		"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+		"form":        formInstance,
+		"model":       m,
+		"formErrs":    make([]error, 0),
+		"fieldErrs":   make(map[string][]error),
+	})
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	return http.StatusOK, html
+}
+
+func (m *Model) processNewInstancePOST(data interface{}, formInstance form.Form) (uint, string) {
+	formData := m.App.Panel.Web.GetFormData(data)
+	if formData == nil {
+		return GetErrorHTML(http.StatusBadRequest, fmt.Errorf("form data is required"))
+	}
+	convertedFormData, err := form.ConvertFormDataToHTMLTypeMap(formData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	cleanFormData, err := form.GetCleanData(formInstance, convertedFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	formErrs, fieldErrs, err := form.ValuesAreValid(formInstance, cleanFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	hasErrors := len(formErrs) > 0
+	if !hasErrors {
+		for _, errs := range fieldErrs {
+			if len(errs) > 0 {
+				hasErrors = true
+				break
+			}
+		}
+	}
+	if hasErrors {
+		_ = formInstance.RegisterInitialValues(cleanFormData)
+		apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
+		}
+		html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
+			"admin":       m.App.Panel,
+			"apps":        apps,
+			"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+			"form":        formInstance,
+			"model":       m,
+			"formErrs":    formErrs,
+			"fieldErrs":   fieldErrs,
+		})
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
+		}
+		return http.StatusOK, html
+	}
+
+	instanceInterface, err := formInstance.Save(convertedFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceID, err := m.GetPrimaryKeyValue(instanceInterface)
+	if err != nil || instanceID == nil {
+		if err == nil {
+			err = fmt.Errorf("instance id is nil")
+		}
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceInstance := &Instance{InstanceID: instanceID, Data: instanceInterface, Model: m}
+	if err := instanceInstance.CreateCreateLog(data); err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceLink := fmt.Sprintf("%s/%v/view", m.GetFullLink(), instanceID)
+	return http.StatusSeeOther, instanceLink
 }
 
 // GetEditHandler returns the HTTP handler function for editing an existing instance.
@@ -616,104 +609,97 @@ func (m *Model) GetEditHandler() HandlerFunc {
 		}
 
 		method := m.App.Panel.Web.GetRequestMethod(data)
-		if method == "GET" {
-			apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
-				"admin": m.App.Panel,
-				"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-				"form":      formInstance,
-				"model":     m,
-				"formErrs":  make([]error, 0),
-				"fieldErrs": make(map[string][]error),
-			})
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			return http.StatusOK, html
-		} else if method == "POST" {
-			formData := m.App.Panel.Web.GetFormData(data)
-			if formData == nil {
-				return GetErrorHTML(http.StatusBadRequest, fmt.Errorf("form data is required"))
-			}
-			convertedFormData, err := form.ConvertFormDataToHTMLTypeMap(formData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			cleanFormData, err := form.GetCleanData(formInstance, convertedFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			formErrs, fieldErrs, err := form.ValuesAreValid(formInstance, cleanFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			containsError := false
-			if len(formErrs) > 0 {
-				containsError = true
-			}
-			for _, errs := range fieldErrs {
-				if len(errs) > 0 {
-					containsError = true
-					break
-				}
-			}
-
-			if containsError {
-				err = formInstance.RegisterInitialValues(cleanFormData)
-
-				apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
-				if err != nil {
-					return GetErrorHTML(http.StatusInternalServerError, err)
-				}
-
-				html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
-					"admin": m.App.Panel,
-					"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-					"form":      formInstance,
-					"model":     m,
-					"formErrs":  formErrs,
-					"fieldErrs": fieldErrs,
-				})
-				if err != nil {
-					return GetErrorHTML(http.StatusInternalServerError, err)
-				}
-				return http.StatusOK, html
-			}
-
-			instanceInterface, err := formInstance.Save(convertedFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			instance := instanceInterface
-			instanceID, err := m.GetPrimaryKeyValue(instance)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			if instanceID == nil {
-				return GetErrorHTML(http.StatusInternalServerError, fmt.Errorf("instance id is nil"))
-			}
-
-			instanceLink := fmt.Sprintf("%s/%v/view", m.GetFullLink(), instanceID)
-
-			instanceInstance := &Instance{
-				InstanceID: instanceID,
-				Data:       instance,
-				Model:      m,
-			}
-
-			err = instanceInstance.CreateUpdateLog(data, cleanFormData)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-
-			return http.StatusSeeOther, instanceLink
-		} else {
+		switch method {
+		case http.MethodGet, "GET":
+			return m.renderEditGET(data, formInstance)
+		case http.MethodPost, "POST":
+			return m.processEditPOST(data, formInstance)
+		default:
 			return GetErrorHTML(http.StatusMethodNotAllowed, fmt.Errorf("method not allowed"))
 		}
 	}
+}
+
+func (m *Model) renderEditGET(data interface{}, formInstance form.Form) (uint, string) {
+	apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
+		"admin": m.App.Panel,
+		"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+		"form":      formInstance,
+		"model":     m,
+		"formErrs":  make([]error, 0),
+		"fieldErrs": make(map[string][]error),
+	})
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	return http.StatusOK, html
+}
+
+func (m *Model) processEditPOST(data interface{}, formInstance form.Form) (uint, string) {
+	formData := m.App.Panel.Web.GetFormData(data)
+	if formData == nil {
+		return GetErrorHTML(http.StatusBadRequest, fmt.Errorf("form data is required"))
+	}
+	convertedFormData, err := form.ConvertFormDataToHTMLTypeMap(formData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	cleanFormData, err := form.GetCleanData(formInstance, convertedFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	formErrs, fieldErrs, err := form.ValuesAreValid(formInstance, cleanFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	hasErrors := len(formErrs) > 0
+	if !hasErrors {
+		for _, errs := range fieldErrs {
+			if len(errs) > 0 {
+				hasErrors = true
+				break
+			}
+		}
+	}
+	if hasErrors {
+		_ = formInstance.RegisterInitialValues(cleanFormData)
+		apps, err := GetAppsWithReadPermissions(m.App.Panel, data)
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
+		}
+		html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
+			"admin": m.App.Panel,
+			"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+			"form":      formInstance,
+			"model":     m,
+			"formErrs":  formErrs,
+			"fieldErrs": fieldErrs,
+		})
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
+		}
+		return http.StatusOK, html
+	}
+
+	instanceInterface, err := formInstance.Save(convertedFormData)
+	if err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceID, err := m.GetPrimaryKeyValue(instanceInterface)
+	if err != nil || instanceID == nil {
+		if err == nil {
+			err = fmt.Errorf("instance id is nil")
+		}
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceInstance := &Instance{InstanceID: instanceID, Data: instanceInterface, Model: m}
+	if err := instanceInstance.CreateUpdateLog(data, cleanFormData); err != nil {
+		return GetErrorHTML(http.StatusInternalServerError, err)
+	}
+	instanceLink := fmt.Sprintf("%s/%v/view", m.GetFullLink(), instanceID)
+	return http.StatusSeeOther, instanceLink
 }
