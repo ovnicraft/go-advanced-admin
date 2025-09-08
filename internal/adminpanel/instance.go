@@ -125,7 +125,7 @@ func (m *Model) GetInstanceDeleteHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-        return http.StatusSeeOther, m.GetFullLink()
+		return http.StatusSeeOther, m.GetFullLink()
 	}
 }
 
@@ -175,30 +175,30 @@ func (m *Model) GetInstanceViewHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-    // Compute permissions and useful links for header actions
-    canCreate, _ := m.App.Panel.PermissionChecker.HasModelCreatePermission(m.App.Name, m.Name, data)
-    canUpdate, _ := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, instanceIDInterface, data)
-    canDelete, _ := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, instanceIDInterface, data)
-    editLink := m.App.Panel.Config.GetLink(fmt.Sprintf("%s/%v/edit", m.GetLink(), instanceIDInterface))
-    listLink := m.GetFullLink()
-    addLink := m.GetFullAddLink()
-    deleteUrl := m.App.Panel.Config.GetLink(fmt.Sprintf("%s/%v/view", m.GetLink(), instanceIDInterface))
+		// Compute permissions and useful links for header actions
+		canCreate, _ := m.App.Panel.PermissionChecker.HasModelCreatePermission(m.App.Name, m.Name, data)
+		canUpdate, _ := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, instanceIDInterface, data)
+		canDelete, _ := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, instanceIDInterface, data)
+		editLink := m.App.Panel.Config.GetLink(fmt.Sprintf("%s/%v/edit", m.GetLink(), instanceIDInterface))
+		listLink := m.GetFullLink()
+		addLink := m.GetFullAddLink()
+		deleteUrl := m.App.Panel.Config.GetLink(fmt.Sprintf("%s/%v/view", m.GetLink(), instanceIDInterface))
 
-    html, err := m.App.Panel.Config.Renderer.RenderTemplate("instance", map[string]interface{}{
-        "admin":       m.App.Panel,
-        "model":       m,
-        "apps":        apps,
-        "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-        "instance":    instanceData,
-        "instanceID":  instanceIDInterface,
-        "canCreate":   canCreate,
-        "canUpdate":   canUpdate,
-        "canDelete":   canDelete,
-        "editLink":    editLink,
-        "addLink":     addLink,
-        "listLink":    listLink,
-        "deleteUrl":   deleteUrl,
-    })
+		html, err := m.App.Panel.Config.Renderer.RenderTemplate("instance", map[string]interface{}{
+			"admin":       m.App.Panel,
+			"model":       m,
+			"apps":        apps,
+			"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+			"instance":    instanceData,
+			"instanceID":  instanceIDInterface,
+			"canCreate":   canCreate,
+			"canUpdate":   canUpdate,
+			"canDelete":   canDelete,
+			"editLink":    editLink,
+			"addLink":     addLink,
+			"listLink":    listLink,
+			"deleteUrl":   deleteUrl,
+		})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
@@ -369,21 +369,21 @@ func (f *ModelEditForm) Save(values map[string]form.HTMLType) (interface{}, erro
 
 // NewAddForm creates a new form for adding an instance of the model.
 func (m *Model) NewAddForm() (form.Form, error) {
-    f := &ModelAddForm{
-        Model: m,
-    }
+	f := &ModelAddForm{
+		Model: m,
+	}
 
-    for _, fieldConfig := range m.Fields {
-        if fieldConfig.AddFormField == nil {
-            continue
-        }
+	for _, fieldConfig := range m.Fields {
+		if fieldConfig.AddFormField == nil {
+			continue
+		}
 
-        err := f.AddField(fieldConfig.Name, cloneFormField(fieldConfig.AddFormField))
-        if err != nil {
-            return nil, err
-        }
-    }
-    return f, nil
+		err := f.AddField(fieldConfig.Name, cloneFormField(fieldConfig.AddFormField))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return f, nil
 }
 
 // NewEditForm creates a new form for editing an existing instance of the model.
@@ -393,33 +393,33 @@ func (m *Model) NewEditForm(instanceID interface{}) (form.Form, error) {
 		InstanceID: instanceID,
 	}
 
-    for _, fieldConfig := range m.Fields {
-        if fieldConfig.EditFormField == nil {
-            continue
-        }
+	for _, fieldConfig := range m.Fields {
+		if fieldConfig.EditFormField == nil {
+			continue
+		}
 
-        err := f.AddField(fieldConfig.Name, cloneFormField(fieldConfig.EditFormField))
-        if err != nil {
-            return nil, err
-        }
-    }
-    return f, nil
+		err := f.AddField(fieldConfig.Name, cloneFormField(fieldConfig.EditFormField))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return f, nil
 }
 
 // cloneFormField returns a shallow copy of the given form.Field to ensure
 // per-request state (like InitialValue) doesn't leak across requests.
 func cloneFormField(f form.Field) form.Field {
-    rv := reflect.ValueOf(f)
-    if rv.Kind() != reflect.Ptr || rv.IsNil() {
-        return f
-    }
-    elem := rv.Elem()
-    newPtr := reflect.New(elem.Type())
-    newPtr.Elem().Set(elem)
-    if cloned, ok := newPtr.Interface().(form.Field); ok {
-        return cloned
-    }
-    return f
+	rv := reflect.ValueOf(f)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return f
+	}
+	elem := rv.Elem()
+	newPtr := reflect.New(elem.Type())
+	newPtr.Elem().Set(elem)
+	if cloned, ok := newPtr.Interface().(form.Field); ok {
+		return cloned
+	}
+	return f
 }
 
 // GetAddHandler returns the HTTP handler function for adding a new instance.
@@ -445,15 +445,15 @@ func (m *Model) GetAddHandler() HandlerFunc {
 				return GetErrorHTML(http.StatusInternalServerError, err)
 			}
 
-            html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
-                "admin":       m.App.Panel,
-                "apps":        apps,
-                "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-                "form":        formInstance,
-                "model":       m,
-                "formErrs":    make([]error, 0),
-                "fieldErrs":   make(map[string][]error),
-            })
+			html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
+				"admin":       m.App.Panel,
+				"apps":        apps,
+				"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+				"form":        formInstance,
+				"model":       m,
+				"formErrs":    make([]error, 0),
+				"fieldErrs":   make(map[string][]error),
+			})
 			if err != nil {
 				return GetErrorHTML(http.StatusInternalServerError, err)
 			}
@@ -494,15 +494,15 @@ func (m *Model) GetAddHandler() HandlerFunc {
 					return GetErrorHTML(http.StatusInternalServerError, err)
 				}
 
-            html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
-                "admin":       m.App.Panel,
-                "apps":        apps,
-                "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-                "form":        formInstance,
-                "model":       m,
-                "formErrs":    formErrs,
-                "fieldErrs":   fieldErrs,
-            })
+				html, err := m.App.Panel.Config.Renderer.RenderTemplate("new_instance", map[string]interface{}{
+					"admin":       m.App.Panel,
+					"apps":        apps,
+					"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+					"form":        formInstance,
+					"model":       m,
+					"formErrs":    formErrs,
+					"fieldErrs":   fieldErrs,
+				})
 				if err != nil {
 					return GetErrorHTML(http.StatusInternalServerError, err)
 				}
@@ -622,14 +622,14 @@ func (m *Model) GetEditHandler() HandlerFunc {
 				return GetErrorHTML(http.StatusInternalServerError, err)
 			}
 
-            html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
-                "admin": m.App.Panel,
-                "apps": apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-                "form":      formInstance,
-                "model":     m,
-                "formErrs":  make([]error, 0),
-                "fieldErrs": make(map[string][]error),
-            })
+			html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
+				"admin": m.App.Panel,
+				"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+				"form":      formInstance,
+				"model":     m,
+				"formErrs":  make([]error, 0),
+				"fieldErrs": make(map[string][]error),
+			})
 			if err != nil {
 				return GetErrorHTML(http.StatusInternalServerError, err)
 			}
@@ -670,14 +670,14 @@ func (m *Model) GetEditHandler() HandlerFunc {
 					return GetErrorHTML(http.StatusInternalServerError, err)
 				}
 
-            html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
-                "admin": m.App.Panel,
-                "apps": apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-                "form":      formInstance,
-                "model":     m,
-                "formErrs":  formErrs,
-                "fieldErrs": fieldErrs,
-            })
+				html, err := m.App.Panel.Config.Renderer.RenderTemplate("edit_instance", map[string]interface{}{
+					"admin": m.App.Panel,
+					"apps":  apps, "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+					"form":      formInstance,
+					"model":     m,
+					"formErrs":  formErrs,
+					"fieldErrs": fieldErrs,
+				})
 				if err != nil {
 					return GetErrorHTML(http.StatusInternalServerError, err)
 				}

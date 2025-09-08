@@ -2,11 +2,11 @@ package adminpanel
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/ovnicraft/go-advanced-admin/internal/form"
 	"github.com/ovnicraft/go-advanced-admin/internal/form/fields"
 	"github.com/ovnicraft/go-advanced-admin/internal/logging"
 	"github.com/ovnicraft/go-advanced-admin/internal/utils"
-	"github.com/google/uuid"
 	"net/http"
 	"reflect"
 	"strings"
@@ -419,7 +419,7 @@ func (a *App) GetHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-    html, err := a.Panel.Config.Renderer.RenderTemplate("app", map[string]interface{}{"admin": a.Panel, "app": a, "models": models, "navBarItems": a.Panel.Config.GetNavBarItems(data)})
+		html, err := a.Panel.Config.Renderer.RenderTemplate("app", map[string]interface{}{"admin": a.Panel, "app": a, "models": models, "navBarItems": a.Panel.Config.GetNavBarItems(data)})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}

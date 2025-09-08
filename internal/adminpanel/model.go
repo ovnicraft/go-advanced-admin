@@ -166,17 +166,17 @@ func (m *Model) GetViewHandler() HandlerFunc {
 			cleanInstances[i] = cleanInstance
 		}
 
-        html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
-            "admin":       m.App.Panel,
-            "apps":        apps,
-            "model":       m,
-            "instances":   cleanInstances,
-            "totalCount":  totalCount,
-            "totalPages":  totalPages,
-            "currentPage": page,
-            "perPage":     perPage,
-            "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-        })
+		html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
+			"admin":       m.App.Panel,
+			"apps":        apps,
+			"model":       m,
+			"instances":   cleanInstances,
+			"totalCount":  totalCount,
+			"totalPages":  totalPages,
+			"currentPage": page,
+			"perPage":     perPage,
+			"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+		})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
@@ -232,30 +232,30 @@ func filterInstancesByPermission(instances interface{}, model *Model, data inter
 // HandleSearchAJAX handles AJAX search requests for the model
 func (m *Model) HandleSearchAJAX(ctx interface{}) error {
 	query := m.App.Panel.Web.GetQueryParam(ctx, "q")
-	
+
 	// Get instances from ORM (simplified - would need actual search implementation)
 	instances, err := m.GetORM().GetAll(m.PTR)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Filter instances based on permissions
 	filtered, err := filterInstancesByPermission(instances, m, ctx)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// TODO: Implement actual search filtering based on query
 	// For now, just return all filtered instances
-	
+
 	response := NewSuccessResponse(map[string]interface{}{
 		"instances": filtered,
 		"total":     len(filtered),
 		"query":     query,
 	}, "")
-	
+
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }
 
@@ -265,35 +265,35 @@ func (m *Model) HandleDeleteAJAX(ctx interface{}) error {
 	if instanceID == "" {
 		instanceID = m.App.Panel.Web.GetQueryParam(ctx, "id")
 	}
-	
+
 	if instanceID == "" {
 		response := NewErrorResponse([]string{"Instance ID is required"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Check delete permission
 	allowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, instanceID, ctx)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	if !allowed {
 		response := NewErrorResponse([]string{"Permission denied"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 403, response)
 	}
-	
+
 	// Delete the instance
 	err = m.GetORM().DeleteByID(m.PTR, instanceID)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Create delete log
 	instanceIDStr := fmt.Sprintf("%v", instanceID)
 	m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, instanceIDStr, nil, m.Name, "")
-	
+
 	response := NewSuccessResponse(nil, "Item deleted successfully")
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }
@@ -305,45 +305,45 @@ func (m *Model) HandleBulkDeleteAJAX(ctx interface{}) error {
 		response := NewErrorResponse([]string{"Invalid JSON data"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	idsInterface, ok := jsonBody["ids"]
 	if !ok {
 		response := NewErrorResponse([]string{"No items selected"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	ids, ok := idsInterface.([]interface{})
 	if !ok {
 		response := NewErrorResponse([]string{"Invalid IDs format"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	deletedCount := 0
 	errors := []string{}
-	
+
 	for _, idInterface := range ids {
 		id := fmt.Sprintf("%v", idInterface)
-		
+
 		// Check delete permission for each item
 		allowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, ctx)
 		if err != nil || !allowed {
 			errors = append(errors, fmt.Sprintf("Permission denied for item %s", id))
 			continue
 		}
-		
+
 		// Delete the instance
 		err = m.GetORM().DeleteByID(m.PTR, id)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("Failed to delete item %s: %s", id, err.Error()))
 			continue
 		}
-		
+
 		deletedCount++
-		
+
 		// Create delete log
 		m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, fmt.Sprintf("%v", id), nil, m.Name, "")
 	}
-	
+
 	if len(errors) > 0 {
 		response := JSONResponse{
 			Success: deletedCount > 0,
@@ -360,10 +360,10 @@ func (m *Model) HandleBulkDeleteAJAX(ctx interface{}) error {
 		}
 		return m.App.Panel.Web.SetJSONResponse(ctx, statusCode, response)
 	}
-	
+
 	response := NewSuccessResponse(map[string]interface{}{
 		"deleted": deletedCount,
 	}, fmt.Sprintf("%d items deleted successfully", deletedCount))
-	
+
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }
