@@ -65,12 +65,6 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Build and run tests (docker compose)
-        run: |
-          docker compose up --build --abort-on-container-exit --exit-code-from root-tests
+      - name: Run tests (Makefile)
+        run: make tests
         timeout-minutes: 20
-
-      - name: Cleanup
-        if: always()
-        run: |
-          docker compose down -v --remove-orphans || true
