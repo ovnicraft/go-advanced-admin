@@ -2,30 +2,75 @@ name: Tests
 
 on:
   push:
-    branches:
-      - dev
-      - main
+    branches: [dev, main]
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/**'
   pull_request:
-    branches:
-      - dev
-      - main
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  format:
+    name: Format / Vet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+        env:
+          GOTOOLCHAIN: auto
+
+      - name: Go env
+        run: |
+          go version
+          go env
+
+      - name: Verify formatting (gofmt)
+        run: |
+          UNFORMATTED=$(gofmt -s -l . | tee /dev/stderr)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "The files above are not gofmt-formatted. Run 'go fmt ./...' locally." >&2
+            exit 1
+          fi
+
+      - name: Go vet
+        run: go vet ./...
+
   test:
     runs-on: ubuntu-latest
-
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    needs: [format]
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    env:
+      DOCKER_BUILDKIT: 1
+      COMPOSE_DOCKER_CLI_BUILD: 1
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Docker Compose
+      - name: Show Docker/Compose versions
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+          docker --version
+          docker compose version
 
-      - name: Build and Test with Docker Compose
+      - name: Build and run tests (docker compose)
         run: |
-          cd "${GITHUB_WORKSPACE}"
-          docker-compose up --build --abort-on-container-exit
+          docker compose up --build --abort-on-container-exit --exit-code-from root-tests
+        timeout-minutes: 20
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v --remove-orphans || true
