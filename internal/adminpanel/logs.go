@@ -44,12 +44,12 @@ func (ap *AdminPanel) GetLogHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-    html, err := ap.Config.Renderer.RenderTemplate("log", map[string]interface{}{
-        "admin":       ap,
-        "apps":        apps,
-        "navBarItems": ap.Config.GetNavBarItems(data),
-        "log":         entry,
-    })
+		html, err := ap.Config.Renderer.RenderTemplate("log", map[string]interface{}{
+			"admin":       ap,
+			"apps":        apps,
+			"navBarItems": ap.Config.GetNavBarItems(data),
+			"log":         entry,
+		})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}

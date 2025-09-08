@@ -27,19 +27,19 @@ func (a ormAdapter) GetAll(model interface{}) (interface{}, error) {
 
 // Persona represents a user persona with basic information
 type Persona struct {
-    ID       uint   `json:"id" gorm:"primaryKey;column:ID"`
-    Name     string `json:"name" gorm:"not null;column:Name"`
-    Email    string `json:"email" gorm:"uniqueIndex;not null;column:Email"`
-    Age      int    `json:"age" gorm:"column:Age"`
-    IsActive bool   `json:"is_active" gorm:"default:true;column:IsActive"`
+	ID       uint   `json:"id" gorm:"primaryKey;column:ID"`
+	Name     string `json:"name" gorm:"not null;column:Name"`
+	Email    string `json:"email" gorm:"uniqueIndex;not null;column:Email"`
+	Age      int    `json:"age" gorm:"column:Age"`
+	IsActive bool   `json:"is_active" gorm:"default:true;column:IsActive"`
 }
 
 func main() {
 	// Initialize Gin router
 	router := gin.Default()
 
-    // Initialize database (use fresh DB for this example)
-    db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// Initialize database (use fresh DB for this example)
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

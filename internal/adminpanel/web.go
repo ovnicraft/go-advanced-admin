@@ -31,7 +31,7 @@ type WebIntegrator interface {
 
 	// SetJSONResponse sets a JSON response with the given status code and data.
 	SetJSONResponse(ctx interface{}, statusCode int, data interface{}) error
-	
+
 	// GetJSONBody retrieves JSON body data from the request context.
 	GetJSONBody(ctx interface{}) (map[string]interface{}, error)
 }

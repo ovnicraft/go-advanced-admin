@@ -143,101 +143,24 @@ func RenderFormAsTable(form Form, formErrs []error, fieldsErrs map[string][]erro
 }
 
 func RenderFormAsTabler(form Form, formErrs []error, fieldsErrs map[string][]error) (string, error) {
-    var htmlStrings []string
-    for _, field := range form.GetFields() {
-        fieldHTML, err := field.HTML()
-        if err != nil {
-            return "", err
-        }
-        label := template.HTMLEscapeString(field.GetLabel())
-        fieldErrs, exists := fieldsErrs[field.GetName()]
+	var htmlStrings []string
+	for _, field := range form.GetFields() {
+		fieldHTML, err := field.HTML()
+		if err != nil {
+			return "", err
+		}
+		label := template.HTMLEscapeString(field.GetLabel())
+		fieldErrs := fieldsErrs[field.GetName()]
 
-		// Add required indicator and error styling
 		labelClass := "form-label"
-
-		// Check if field has validation functions (indicating it's required)
-		validationFuncs := field.GetValidationFunctions()
-		if len(validationFuncs) > 0 {
+		if len(field.GetValidationFunctions()) > 0 {
 			labelClass = "form-label required-label"
 		}
 
-        // Special handling for boolean checkbox fields
-        if strings.Contains(fieldHTML, `type="checkbox"`) {
-            // Ensure input has id and proper class
-            name := field.GetName()
-            // Inject id attribute if missing
-            if !strings.Contains(fieldHTML, " id=") {
-                fieldHTML = strings.Replace(fieldHTML, "<input", `<input id="`+name+`"`, 1)
-            }
-            // Ensure checkbox class
-            if strings.Contains(fieldHTML, `class="`) {
-                fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-control"`, `class="form-check-input"`)
-            } else {
-                fieldHTML = strings.Replace(fieldHTML, `id="`+name+`"`, `id="`+name+`" class="form-check-input"`, 1)
-            }
-            // Render errors
-            fieldErrors := ""
-            if exists && len(fieldErrs) > 0 {
-                var errorStrings []string
-                for _, err := range fieldErrs {
-                    errorStrings = append(errorStrings, template.HTMLEscapeString(err.Error()))
-                }
-                fieldErrors = fmt.Sprintf(`<div class="invalid-feedback d-block">%s</div>`, strings.Join(errorStrings, "<br>"))
-            }
-            // Wrap in form-check and bind label to input
-            htmlStrings = append(htmlStrings, fmt.Sprintf(`<div class="mb-3">
-<div class="form-check">
-%s
-<label class="form-check-label" for="%s">%s</label>
-</div>
-%s
-</div>`, fieldHTML, name, label, fieldErrors))
-            continue
-        }
+		rendered := renderTablerField(field, labelClass, label, fieldHTML, fieldErrs)
+		htmlStrings = append(htmlStrings, rendered)
+	}
 
-        // Add error styling to non-checkbox inputs if there are errors
-        if exists && len(fieldErrs) > 0 {
-            // Add Bootstrap invalid class to form controls
-            fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-control"`, `class="form-control is-invalid"`)
-            fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-select"`, `class="form-select is-invalid"`)
-        } else {
-            // Ensure form controls have proper Bootstrap classes
-            if !strings.Contains(fieldHTML, `class="`) {
-                fieldHTML = strings.ReplaceAll(fieldHTML, `<input`, `<input class="form-control"`)
-                fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select class="form-select"`)
-                fieldHTML = strings.ReplaceAll(fieldHTML, `<textarea`, `<textarea class="form-control"`)
-            }
-        }
-
-		// Add Select2 and Flatpickr classes for enhanced controls
-		if strings.Contains(fieldHTML, `<select`) && !strings.Contains(fieldHTML, `multiple`) {
-			fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select data-role="select2"`)
-		}
-		if strings.Contains(fieldHTML, `type="date"`) {
-			fieldHTML = strings.ReplaceAll(fieldHTML, `type="date"`, `type="text" data-role="flatpickr"`)
-		}
-		if strings.Contains(fieldHTML, `type="datetime-local"`) {
-			fieldHTML = strings.ReplaceAll(fieldHTML, `type="datetime-local"`, `type="text" data-role="datetimepicker"`)
-		}
-
-		// Render field errors with Bootstrap styling
-		fieldErrors := ""
-		if exists && len(fieldErrs) > 0 {
-			var errorStrings []string
-			for _, err := range fieldErrs {
-				errorStrings = append(errorStrings, template.HTMLEscapeString(err.Error()))
-			}
-			fieldErrors = fmt.Sprintf(`<div class="invalid-feedback d-block">%s</div>`, strings.Join(errorStrings, "<br>"))
-		}
-
-        htmlStrings = append(htmlStrings, fmt.Sprintf(`<div class="mb-3">
-<label class="%s">%s</label>
-%s
-%s
-</div>`, labelClass, label, fieldHTML, fieldErrors))
-    }
-
-	// Render form-level errors
 	if len(formErrs) > 0 {
 		var errorStrings []string
 		for _, err := range formErrs {
@@ -250,4 +173,73 @@ func RenderFormAsTabler(form Form, formErrs []error, fieldsErrs map[string][]err
 	}
 
 	return strings.Join(htmlStrings, "\n"), nil
+}
+
+func renderTablerField(field Field, labelClass, label, fieldHTML string, fieldErrs []error) string {
+	// Checkbox special case
+	if strings.Contains(fieldHTML, `type="checkbox"`) {
+		name := field.GetName()
+		if !strings.Contains(fieldHTML, " id=") {
+			fieldHTML = strings.Replace(fieldHTML, "<input", `<input id="`+name+`"`, 1)
+		}
+		if strings.Contains(fieldHTML, `class="`) {
+			fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-control"`, `class="form-check-input"`)
+		} else {
+			fieldHTML = strings.Replace(fieldHTML, `id="`+name+`"`, `id="`+name+`" class="form-check-input"`, 1)
+		}
+		fieldErrors := renderFieldErrors(fieldErrs)
+		return fmt.Sprintf(`<div class="mb-3">
+<div class="form-check">
+%s
+<label class="form-check-label" for="%s">%s</label>
+</div>
+%s
+</div>`, fieldHTML, name, label, fieldErrors)
+	}
+
+	// Non-checkbox
+	hasErr := len(fieldErrs) > 0
+	fieldHTML = normalizeControlClasses(fieldHTML, hasErr)
+
+	if strings.Contains(fieldHTML, `<select`) && !strings.Contains(fieldHTML, `multiple`) {
+		fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select data-role="select2"`)
+	}
+	if strings.Contains(fieldHTML, `type="date"`) {
+		fieldHTML = strings.ReplaceAll(fieldHTML, `type="date"`, `type="text" data-role="flatpickr"`)
+	}
+	if strings.Contains(fieldHTML, `type="datetime-local"`) {
+		fieldHTML = strings.ReplaceAll(fieldHTML, `type="datetime-local"`, `type="text" data-role="datetimepicker"`)
+	}
+
+	fieldErrors := renderFieldErrors(fieldErrs)
+	return fmt.Sprintf(`<div class="mb-3">
+<label class="%s">%s</label>
+%s
+%s
+</div>`, labelClass, label, fieldHTML, fieldErrors)
+}
+
+func renderFieldErrors(errs []error) string {
+	if len(errs) == 0 {
+		return ""
+	}
+	var errorStrings []string
+	for _, err := range errs {
+		errorStrings = append(errorStrings, template.HTMLEscapeString(err.Error()))
+	}
+	return fmt.Sprintf(`<div class="invalid-feedback d-block">%s</div>`, strings.Join(errorStrings, "<br>"))
+}
+
+func normalizeControlClasses(fieldHTML string, hasErr bool) string {
+	if hasErr {
+		fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-control"`, `class="form-control is-invalid"`)
+		fieldHTML = strings.ReplaceAll(fieldHTML, `class="form-select"`, `class="form-select is-invalid"`)
+		return fieldHTML
+	}
+	if !strings.Contains(fieldHTML, `class="`) {
+		fieldHTML = strings.ReplaceAll(fieldHTML, `<input`, `<input class="form-control"`)
+		fieldHTML = strings.ReplaceAll(fieldHTML, `<select`, `<select class="form-select"`)
+		fieldHTML = strings.ReplaceAll(fieldHTML, `<textarea`, `<textarea class="form-control"`)
+	}
+	return fieldHTML
 }

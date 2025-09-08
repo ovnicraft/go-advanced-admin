@@ -63,28 +63,77 @@ func (m *Model) GetFullAddLink() string {
 	return m.App.Panel.Config.GetLink(m.GetAddLink())
 }
 
+// helper: pagination parameters
+func getPagination(m *Model, data interface{}) (uint, uint) {
+	pageQuery := m.App.Panel.Web.GetQueryParam(data, "page")
+	perPageQuery := m.App.Panel.Web.GetQueryParam(data, "perPage")
+
+	var page, perPage uint
+	if p, err := strconv.Atoi(pageQuery); err == nil {
+		page = uint(p)
+	} else {
+		page = 1
+	}
+	if pp, err := strconv.Atoi(perPageQuery); err == nil {
+		perPage = uint(pp)
+	} else {
+		perPage = m.App.Panel.Config.DefaultInstancesPerPage
+	}
+	if perPage < 10 {
+		perPage = 10
+	}
+	return page, perPage
+}
+
+func getFieldsToFetch(m *Model) []string {
+	var fields []string
+	for _, fc := range m.Fields {
+		if fc.IncludeInListFetch {
+			fields = append(fields, fc.Name)
+		}
+	}
+	return fields
+}
+
+func getFieldsToSearch(m *Model) []string {
+	var fields []string
+	for _, fc := range m.Fields {
+		if fc.IncludeInSearch {
+			fields = append(fields, fc.Name)
+		}
+	}
+	return fields
+}
+
+func buildCleanInstances(m *Model, data interface{}, instances []interface{}) ([]Instance, error) {
+	clean := make([]Instance, len(instances))
+	for i, instance := range instances {
+		id, err := m.GetPrimaryKeyValue(instance)
+		if err != nil {
+			return nil, err
+		}
+		updateAllowed, err := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, id, data)
+		if err != nil {
+			return nil, err
+		}
+		deleteAllowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, data)
+		if err != nil {
+			return nil, err
+		}
+		clean[i] = Instance{
+			InstanceID:  id,
+			Data:        instance,
+			Model:       m,
+			Permissions: Permissions{Read: true, Update: updateAllowed, Delete: deleteAllowed},
+		}
+	}
+	return clean, nil
+}
+
 // GetViewHandler returns the HTTP handler function for the model's list view.
 func (m *Model) GetViewHandler() HandlerFunc {
 	return func(data interface{}) (uint, string) {
-		var page, perPage uint
-		pageQuery := m.App.Panel.Web.GetQueryParam(data, "page")
-		perPageQuery := m.App.Panel.Web.GetQueryParam(data, "perPage")
-
-		if p, err := strconv.Atoi(pageQuery); err == nil {
-			page = uint(p)
-		} else {
-			page = 1
-		}
-
-		if pp, err := strconv.Atoi(perPageQuery); err == nil {
-			perPage = uint(pp)
-		} else {
-			perPage = m.App.Panel.Config.DefaultInstancesPerPage
-		}
-
-		if perPage < 10 {
-			perPage = 10
-		}
+		page, perPage := getPagination(m, data)
 
 		allowed, err := m.App.Panel.PermissionChecker.HasModelReadPermission(m.App.Name, m.Name, data)
 		if err != nil {
@@ -99,24 +148,14 @@ func (m *Model) GetViewHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-		var fieldsToFetch []string
-		for _, fieldConfig := range m.Fields {
-			if fieldConfig.IncludeInListFetch {
-				fieldsToFetch = append(fieldsToFetch, fieldConfig.Name)
-			}
-		}
+		fieldsToFetch := getFieldsToFetch(m)
 
 		searchQuery := m.App.Panel.Web.GetQueryParam(data, "search")
 		var instances interface{}
 		if searchQuery == "" {
 			instances, err = m.GetORM().FetchInstancesOnlyFields(m.PTR, fieldsToFetch)
 		} else {
-			var fieldsToSearch []string
-			for _, fieldConfig := range m.Fields {
-				if fieldConfig.IncludeInSearch {
-					fieldsToSearch = append(fieldsToSearch, fieldConfig.Name)
-				}
-			}
+			fieldsToSearch := getFieldsToSearch(m)
 			instances, err = m.GetORM().FetchInstancesOnlyFieldWithSearch(m.PTR, fieldsToFetch, searchQuery, fieldsToSearch)
 		}
 		if err != nil {
@@ -143,40 +182,22 @@ func (m *Model) GetViewHandler() HandlerFunc {
 
 		pagedInstances := filteredInstances[startIndex:endIndex]
 
-		cleanInstances := make([]Instance, len(pagedInstances))
-		for i, instance := range pagedInstances {
-			id, err := m.GetPrimaryKeyValue(instance)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			updateAllowed, err := m.App.Panel.PermissionChecker.HasInstanceUpdatePermission(m.App.Name, m.Name, id, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			deleteAllowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, data)
-			if err != nil {
-				return GetErrorHTML(http.StatusInternalServerError, err)
-			}
-			cleanInstance := Instance{
-				InstanceID:  id,
-				Data:        instance,
-				Model:       m,
-				Permissions: Permissions{Read: true, Update: updateAllowed, Delete: deleteAllowed},
-			}
-			cleanInstances[i] = cleanInstance
+		cleanInstances, err := buildCleanInstances(m, data, pagedInstances)
+		if err != nil {
+			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-        html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
-            "admin":       m.App.Panel,
-            "apps":        apps,
-            "model":       m,
-            "instances":   cleanInstances,
-            "totalCount":  totalCount,
-            "totalPages":  totalPages,
-            "currentPage": page,
-            "perPage":     perPage,
-            "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-        })
+		html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
+			"admin":       m.App.Panel,
+			"apps":        apps,
+			"model":       m,
+			"instances":   cleanInstances,
+			"totalCount":  totalCount,
+			"totalPages":  totalPages,
+			"currentPage": page,
+			"perPage":     perPage,
+			"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+		})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
@@ -232,30 +253,30 @@ func filterInstancesByPermission(instances interface{}, model *Model, data inter
 // HandleSearchAJAX handles AJAX search requests for the model
 func (m *Model) HandleSearchAJAX(ctx interface{}) error {
 	query := m.App.Panel.Web.GetQueryParam(ctx, "q")
-	
+
 	// Get instances from ORM (simplified - would need actual search implementation)
 	instances, err := m.GetORM().GetAll(m.PTR)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Filter instances based on permissions
 	filtered, err := filterInstancesByPermission(instances, m, ctx)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// TODO: Implement actual search filtering based on query
 	// For now, just return all filtered instances
-	
+
 	response := NewSuccessResponse(map[string]interface{}{
 		"instances": filtered,
 		"total":     len(filtered),
 		"query":     query,
 	}, "")
-	
+
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }
 
@@ -265,35 +286,35 @@ func (m *Model) HandleDeleteAJAX(ctx interface{}) error {
 	if instanceID == "" {
 		instanceID = m.App.Panel.Web.GetQueryParam(ctx, "id")
 	}
-	
+
 	if instanceID == "" {
 		response := NewErrorResponse([]string{"Instance ID is required"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Check delete permission
 	allowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, instanceID, ctx)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	if !allowed {
 		response := NewErrorResponse([]string{"Permission denied"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 403, response)
 	}
-	
+
 	// Delete the instance
 	err = m.GetORM().DeleteByID(m.PTR, instanceID)
 	if err != nil {
 		response := NewErrorResponse([]string{err.Error()})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	// Create delete log
 	instanceIDStr := fmt.Sprintf("%v", instanceID)
 	m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, instanceIDStr, nil, m.Name, "")
-	
+
 	response := NewSuccessResponse(nil, "Item deleted successfully")
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }
@@ -305,45 +326,45 @@ func (m *Model) HandleBulkDeleteAJAX(ctx interface{}) error {
 		response := NewErrorResponse([]string{"Invalid JSON data"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	idsInterface, ok := jsonBody["ids"]
 	if !ok {
 		response := NewErrorResponse([]string{"No items selected"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	ids, ok := idsInterface.([]interface{})
 	if !ok {
 		response := NewErrorResponse([]string{"Invalid IDs format"})
 		return m.App.Panel.Web.SetJSONResponse(ctx, 400, response)
 	}
-	
+
 	deletedCount := 0
 	errors := []string{}
-	
+
 	for _, idInterface := range ids {
 		id := fmt.Sprintf("%v", idInterface)
-		
+
 		// Check delete permission for each item
 		allowed, err := m.App.Panel.PermissionChecker.HasInstanceDeletePermission(m.App.Name, m.Name, id, ctx)
 		if err != nil || !allowed {
 			errors = append(errors, fmt.Sprintf("Permission denied for item %s", id))
 			continue
 		}
-		
+
 		// Delete the instance
 		err = m.GetORM().DeleteByID(m.PTR, id)
 		if err != nil {
 			errors = append(errors, fmt.Sprintf("Failed to delete item %s: %s", id, err.Error()))
 			continue
 		}
-		
+
 		deletedCount++
-		
+
 		// Create delete log
 		m.App.Panel.Config.CreateLog(ctx, logging.LogStoreLevelInstanceDelete, fmt.Sprintf("%v", id), nil, m.Name, "")
 	}
-	
+
 	if len(errors) > 0 {
 		response := JSONResponse{
 			Success: deletedCount > 0,
@@ -360,10 +381,10 @@ func (m *Model) HandleBulkDeleteAJAX(ctx interface{}) error {
 		}
 		return m.App.Panel.Web.SetJSONResponse(ctx, statusCode, response)
 	}
-	
+
 	response := NewSuccessResponse(map[string]interface{}{
 		"deleted": deletedCount,
 	}, fmt.Sprintf("%d items deleted successfully", deletedCount))
-	
+
 	return m.App.Panel.Web.SetJSONResponse(ctx, 200, response)
 }

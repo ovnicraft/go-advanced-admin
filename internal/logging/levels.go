@@ -3,13 +3,13 @@ package logging
 type LogStoreLevel string
 
 const (
-	LogStoreLevelDelete           LogStoreLevel = "delete"
-	LogStoreLevelCreate           LogStoreLevel = "create"
-	LogStoreLevelUpdate           LogStoreLevel = "update"
-	LogStoreLevelInstanceView     LogStoreLevel = "instance_view"
-	LogStoreLevelInstanceDelete   LogStoreLevel = "instance_delete"
-	LogStoreLevelListView         LogStoreLevel = "list_view"
-	LogStoreLevelPanelView        LogStoreLevel = "panel_view"
+	LogStoreLevelDelete         LogStoreLevel = "delete"
+	LogStoreLevelCreate         LogStoreLevel = "create"
+	LogStoreLevelUpdate         LogStoreLevel = "update"
+	LogStoreLevelInstanceView   LogStoreLevel = "instance_view"
+	LogStoreLevelInstanceDelete LogStoreLevel = "instance_delete"
+	LogStoreLevelListView       LogStoreLevel = "list_view"
+	LogStoreLevelPanelView      LogStoreLevel = "panel_view"
 )
 
 var levelsHierarchy = map[LogStoreLevel]int{
