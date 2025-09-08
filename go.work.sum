@@ -16,6 +16,8 @@ github.com/ovnicraft/go-advanced-admin-gin v0.0.2 h1:/vHXA7SMq56H1IKBEMDs4HSGpAX
 github.com/ovnicraft/go-advanced-admin-gin v0.0.2/go.mod h1:HOfpKL0Kp+GGY3x+xaPGXaSOai0/GrCzql7QFghN8Vg=
 github.com/ovnicraft/go-advanced-admin-gin v0.0.4 h1:r976R61o8etwSDsxopbd452ZrrFe2VFy3sr+iUeuaBo=
 github.com/ovnicraft/go-advanced-admin-gin v0.0.4/go.mod h1:KSPoFpIgbSlZIw2Vaovb1k/nPw7qrNrKE93UxV4DI3c=
+github.com/ovnicraft/go-advanced-admin-gin v0.0.5 h1:HOCiZwe6Lq3ml2h1MxQ5tTuYp4ZaDcOXv1khdYeSW+o=
+github.com/ovnicraft/go-advanced-admin-gin v0.0.5/go.mod h1:MMMtzfAzG5XHcgrNnOa12XVmX6LvAJNTPTHjSA5mgtk=
 github.com/stretchr/objx v0.5.2 h1:xuMeJ0Sdp5ZMRXx/aWO6RZxdr3beISkG5/G/aIRr3pY=
 github.com/yuin/goldmark v1.4.13 h1:fVcFKWvrslecOb/tg+Cc05dkeYx540o0FuFt3nUVDoE=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
