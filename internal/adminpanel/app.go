@@ -194,24 +194,58 @@ func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
 	}
 
 	listFetchTagPresent := false
+	var retErr error
 	forEachTag(tag, func(key, value string) {
 		switch key {
 		case "listDisplay":
-			opts.includeInList = (value == "include") || (value == "")
-			if value == "exclude" {
+			if value == "include" {
+				opts.includeInList = true
+			} else if value == "exclude" {
 				opts.includeInList = false
+			} else if value != "" { // invalid explicit value
+				retErr = fmt.Errorf("invalid value for 'listDisplay' tag: %s", value)
 			}
 		case "listFetch":
 			listFetchTagPresent = true
-			opts.includeInFetch = (value != "exclude")
+			if value == "include" {
+				opts.includeInFetch = true
+			} else if value == "exclude" {
+				opts.includeInFetch = false
+			} else {
+				retErr = fmt.Errorf("invalid value for 'listFetch' tag: %s", value)
+			}
 		case "search":
-			opts.includeInSearch = (value != "exclude")
+			if value == "include" {
+				opts.includeInSearch = true
+			} else if value == "exclude" {
+				opts.includeInSearch = false
+			} else {
+				retErr = fmt.Errorf("invalid value for 'search' tag: %s", value)
+			}
 		case "view":
-			opts.includeInInstanceView = (value != "exclude")
+			if value == "include" {
+				opts.includeInInstanceView = true
+			} else if value == "exclude" {
+				opts.includeInInstanceView = false
+			} else {
+				retErr = fmt.Errorf("invalid value for 'view' tag: %s", value)
+			}
 		case "addForm":
-			opts.includeInAddForm = (value != "exclude")
+			if value == "include" {
+				opts.includeInAddForm = true
+			} else if value == "exclude" {
+				opts.includeInAddForm = false
+			} else {
+				retErr = fmt.Errorf("invalid value for 'addForm' tag: %s", value)
+			}
 		case "editForm":
-			opts.includeInEditForm = (value != "exclude")
+			if value == "include" {
+				opts.includeInEditForm = true
+			} else if value == "exclude" {
+				opts.includeInEditForm = false
+			} else {
+				retErr = fmt.Errorf("invalid value for 'editForm' tag: %s", value)
+			}
 		case "displayName":
 			opts.fieldDisplayName = value
 		}
@@ -223,6 +257,9 @@ func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
 		} else {
 			opts.includeInFetch = opts.includeInList
 		}
+	}
+	if retErr != nil {
+		return opts, retErr
 	}
 	return opts, nil
 }
