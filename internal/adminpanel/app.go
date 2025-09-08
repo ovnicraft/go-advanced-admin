@@ -196,58 +196,8 @@ func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
 	listFetchTagPresent := false
 	var retErr error
 	forEachTag(tag, func(key, value string) {
-		switch key {
-		case "listDisplay":
-			if value == "include" {
-				opts.includeInList = true
-			} else if value == "exclude" {
-				opts.includeInList = false
-			} else if value != "" { // invalid explicit value
-				retErr = fmt.Errorf("invalid value for 'listDisplay' tag: %s", value)
-			}
-		case "listFetch":
-			listFetchTagPresent = true
-			if value == "include" {
-				opts.includeInFetch = true
-			} else if value == "exclude" {
-				opts.includeInFetch = false
-			} else {
-				retErr = fmt.Errorf("invalid value for 'listFetch' tag: %s", value)
-			}
-		case "search":
-			if value == "include" {
-				opts.includeInSearch = true
-			} else if value == "exclude" {
-				opts.includeInSearch = false
-			} else {
-				retErr = fmt.Errorf("invalid value for 'search' tag: %s", value)
-			}
-		case "view":
-			if value == "include" {
-				opts.includeInInstanceView = true
-			} else if value == "exclude" {
-				opts.includeInInstanceView = false
-			} else {
-				retErr = fmt.Errorf("invalid value for 'view' tag: %s", value)
-			}
-		case "addForm":
-			if value == "include" {
-				opts.includeInAddForm = true
-			} else if value == "exclude" {
-				opts.includeInAddForm = false
-			} else {
-				retErr = fmt.Errorf("invalid value for 'addForm' tag: %s", value)
-			}
-		case "editForm":
-			if value == "include" {
-				opts.includeInEditForm = true
-			} else if value == "exclude" {
-				opts.includeInEditForm = false
-			} else {
-				retErr = fmt.Errorf("invalid value for 'editForm' tag: %s", value)
-			}
-		case "displayName":
-			opts.fieldDisplayName = value
+		if err := applyTagToOptions(&opts, key, value, &listFetchTagPresent); err != nil && retErr == nil {
+			retErr = err
 		}
 	})
 
@@ -262,6 +212,51 @@ func parseInclusionTags(tag, fieldName string) (tagOptions, error) {
 		return opts, retErr
 	}
 	return opts, nil
+}
+
+// applyTagToOptions applies a single tag key/value to tagOptions and tracks listFetch presence.
+func applyTagToOptions(opts *tagOptions, key, value string, listFetchTagPresent *bool) error {
+	// Fast dispatch using maps to minimize branching
+	if key == "displayName" {
+		opts.fieldDisplayName = value
+		return nil
+	}
+
+	boolTargets := map[string]*bool{
+		"listDisplay": &opts.includeInList,
+		"listFetch":   &opts.includeInFetch,
+		"search":      &opts.includeInSearch,
+		"view":        &opts.includeInInstanceView,
+		"addForm":     &opts.includeInAddForm,
+		"editForm":    &opts.includeInEditForm,
+	}
+
+	target, ok := boolTargets[key]
+	if !ok {
+		// Unknown tag: ignore
+		return nil
+	}
+	if key == "listFetch" {
+		*listFetchTagPresent = true
+	}
+	v, err := parseIncludeExclude(value, key)
+	if err != nil {
+		return err
+	}
+	*target = v
+	return nil
+}
+
+// parseIncludeExclude converts tag values "include"/"exclude" to bool or returns an error.
+func parseIncludeExclude(value, key string) (bool, error) {
+	mapping := map[string]bool{
+		"include": true,
+		"exclude": false,
+	}
+	if v, ok := mapping[value]; ok {
+		return v, nil
+	}
+	return false, fmt.Errorf("invalid value for '%s' tag: %s", key, value)
 }
 
 func buildFormField(underlyingType reflect.Type, fieldType reflect.Type, tag string) (form.Field, error) {
