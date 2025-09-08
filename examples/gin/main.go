@@ -1,8 +1,8 @@
 package main
 
 import (
-    "log"
-    "net/http"
+	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	admingorm "github.com/go-advanced-admin/orm-gorm"
@@ -92,13 +92,13 @@ func main() {
 	// No example-level asset workaround needed; integrator v0.0.4 serves assets
 
 	// Temporary routes for testing
-    router.GET("/", func(c *gin.Context) {
-        c.JSON(http.StatusOK, gin.H{
-            "message": "Gin Admin Panel Example",
-            // Pin displayed version to the example's target library version
-            "version": adminLibVersion,
-        })
-    })
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Gin Admin Panel Example",
+			// Pin displayed version to the example's target library version
+			"version": adminLibVersion,
+		})
+	})
 
 	router.GET("/personas", func(c *gin.Context) {
 		var personas []Persona
@@ -111,9 +111,9 @@ func main() {
 		log.Println(r.Method, r.Path)
 	}
 
-    log.Printf("Starting with go-advanced-admin v%s\n", adminLibVersion)
-    log.Println("Server starting on :8080")
-    log.Println("Admin panel available at: http://localhost:8080/admin")
+	log.Printf("Starting with go-advanced-admin v%s\n", adminLibVersion)
+	log.Println("Server starting on :8080")
+	log.Println("Admin panel available at: http://localhost:8080/admin")
 	log.Fatal(router.Run(":8080"))
 }
 
