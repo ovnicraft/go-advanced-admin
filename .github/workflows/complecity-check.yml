@@ -16,11 +16,16 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+        env:
+          GOTOOLCHAIN: auto
 
       - name: Install gocyclo
         run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
 
-  - name: Run gocyclo
+      - name: Run gocyclo
         run: |
           FILES=$(git ls-files '*.go' | grep -v '_test.go' || true)
           if [ -z "$FILES" ]; then
