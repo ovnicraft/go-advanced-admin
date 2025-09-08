@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const adminLibVersion = "1.2.0"
+
 // ormAdapter adapts the orm-gorm integrator to the latest ORMIntegrator interface.
 type ormAdapter struct{ *admingorm.Integrator }
 
@@ -93,7 +95,8 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Gin Admin Panel Example",
-			"version": admin.Version,
+			// Pin displayed version to the example's target library version
+			"version": adminLibVersion,
 		})
 	})
 
@@ -108,6 +111,7 @@ func main() {
 		log.Println(r.Method, r.Path)
 	}
 
+	log.Printf("Starting with go-advanced-admin v%s\n", adminLibVersion)
 	log.Println("Server starting on :8080")
 	log.Println("Admin panel available at: http://localhost:8080/admin")
 	log.Fatal(router.Run(":8080"))
