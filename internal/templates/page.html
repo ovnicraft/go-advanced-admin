@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{.admin.config.name}}</title>
+    <title>{{ .admin.Config.Name }}</title>
     
     <!-- Tabler Core CSS -->
     <link href="{{ assetPath "css/tabler.min.css" }}" rel="stylesheet" />
@@ -76,7 +76,7 @@
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-nav flex-row order-md-last">
+                <div class="navbar-nav flex-row ms-auto gap-2 align-items-center">
                     {{ range .navBarItems }}
                     <div class="nav-item">
                         {{- safeHTML .HTML -}}

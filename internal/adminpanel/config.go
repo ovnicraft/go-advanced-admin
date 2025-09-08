@@ -29,12 +29,10 @@ var DefaultAdminConfig = NewDefaultAdminConfig()
 
 // NewDefaultAdminConfig returns a new AdminConfig with default settings.
 func NewDefaultAdminConfig() *AdminConfig {
-	navBarGens := []NavBarGenerator{
-		func(interface{}) NavBarItem { return NavBarItem{Name: "Welcome, User. ", Bold: true} },
-		func(interface{}) NavBarItem { return NavBarItem{Name: "View Site", Link: "/"} },
-		func(interface{}) NavBarItem { return NavBarItem{Name: "View Site", Link: "/"} },
-		func(interface{}) NavBarItem { return NavBarItem{Name: "View Site", Link: "/"} },
-	}
+    navBarGens := []NavBarGenerator{
+        func(interface{}) NavBarItem { return NavBarItem{Name: "Welcome, User.", Bold: true} },
+        func(interface{}) NavBarItem { return NavBarItem{Name: "View Site", Link: "/"} },
+    }
 
 	return &AdminConfig{
 		Name:                    "Site Administration",

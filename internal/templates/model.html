@@ -1,16 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ .model.DisplayName }} - Administration</title>
-    
-    <!-- Use the header template -->
-    {{ template "header" . }}
-</head>
-<body>
-    <div class="page">
-        {{ template "sidebar" . }}
-        
+{{ template "header" . }}
+{{ template "sidebar" . }}
+
         <div class="page-wrapper">
             {{ template "navbar" . }}
             
@@ -128,8 +118,7 @@
                 </div>
             </div>
         </div>
-    </div>
-    
+
     <!-- Delete confirmation modal -->
     <div class="modal modal-blur fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -147,5 +136,3 @@
     </div>
     
     {{ template "footer" . }}
-</body>
-</html>

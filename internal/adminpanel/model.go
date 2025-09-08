@@ -166,16 +166,17 @@ func (m *Model) GetViewHandler() HandlerFunc {
 			cleanInstances[i] = cleanInstance
 		}
 
-		html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
-			"apps":        apps,
-			"model":       m,
-			"instances":   cleanInstances,
-			"totalCount":  totalCount,
-			"totalPages":  totalPages,
-			"currentPage": page,
-			"perPage":     perPage,
-			"navBarItems": m.App.Panel.Config.GetNavBarItems(data),
-		})
+        html, err := m.App.Panel.Config.Renderer.RenderTemplate("model", map[string]interface{}{
+            "admin":       m.App.Panel,
+            "apps":        apps,
+            "model":       m,
+            "instances":   cleanInstances,
+            "totalCount":  totalCount,
+            "totalPages":  totalPages,
+            "currentPage": page,
+            "perPage":     perPage,
+            "navBarItems": m.App.Panel.Config.GetNavBarItems(data),
+        })
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}

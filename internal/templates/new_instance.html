@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ if .form.InstanceID }}Edit{{ else }}Create{{ end }} {{ .model.DisplayName }}</title>
-    {{ template "header" . }}
-</head>
-<body>
-    <div class="page">
-        {{ template "sidebar" . }}
-        
+{{ template "header" . }}
+{{ template "sidebar" . }}
+
         <div class="page-wrapper">
             {{ template "navbar" . }}
             
@@ -24,14 +16,10 @@
                                             <li class="breadcrumb-item"><a href="{{ .model.App.Panel.GetFullLink }}">Home</a></li>
                                             <li class="breadcrumb-item"><a href="{{ .model.App.GetFullLink }}">{{ .model.App.DisplayName }}</a></li>
                                             <li class="breadcrumb-item"><a href="{{ .model.GetFullLink }}">{{ .model.DisplayName }}</a></li>
-                                            <li class="breadcrumb-item active">
-                                                {{ if .form.InstanceID }}Edit{{ else }}Create{{ end }}
-                                            </li>
+                                            <li class="breadcrumb-item active">Create</li>
                                         </ol>
                                     </nav>
-                                    <h2 class="page-title">
-                                        {{ if .form.InstanceID }}Edit{{ else }}Create{{ end }} {{ .model.DisplayName }}
-                                    </h2>
+                                    <h2 class="page-title">Create {{ .model.DisplayName }}</h2>
                                 </div>
                             </div>
                         </div>
@@ -42,7 +30,7 @@
                         <div class="container-xl">
                             <div class="row">
                                 <div class="col-md-8 offset-md-2">
-                                    <form method="post" action="{{ if .form.InstanceID }}{{ .model.GetFullLink }}/{{ .form.InstanceID }}/edit{{ else }}{{ .model.GetFullAddLink }}{{ end }}" class="card">
+                                    <form method="post" action="{{ .model.GetFullAddLink }}" class="card">
                                         <div class="card-header">
                                             <h3 class="card-title">
                                                 {{ .model.DisplayName }} Details
@@ -65,9 +53,7 @@
                                         <div class="card-footer text-end">
                                             <div class="d-flex">
                                                 <a href="{{ .model.GetFullLink }}" class="btn me-auto">Cancel</a>
-                                                <button type="submit" class="btn btn-primary">
-                                                    {{ if .form.InstanceID }}Update{{ else }}Create{{ end }}
-                                                </button>
+                                                <button type="submit" class="btn btn-primary">Create</button>
                                             </div>
                                         </div>
                                     </form>
@@ -78,7 +64,4 @@
                 </div>
             </div>
         </div>
-    </div>
     {{ template "footer" . }}
-</body>
-</html>

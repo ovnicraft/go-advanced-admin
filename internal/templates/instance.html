@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ .model.DisplayName }} - Administration</title>
-    {{ template "header" . }}
-</head>
-<body>
-    <div class="page">
-        {{ template "sidebar" . }}
-        
+{{ template "header" . }}
+{{ template "sidebar" . }}
+
         <div class="page-wrapper">
             {{ template "navbar" . }}
             
@@ -30,6 +22,36 @@
                                     <h2 class="page-title">
                                         {{ .model.DisplayName }} Instance
                                     </h2>
+                                </div>
+                                <div class="col-auto ms-auto d-print-none">
+                                    <div class="btn-list">
+                                        {{ if .canUpdate }}
+                                        <a href="{{ .editLink }}" class="btn btn-primary">
+                                            <i class="ti ti-edit"></i>
+                                            Edit
+                                        </a>
+                                        {{ end }}
+                                        {{ if .canCreate }}
+                                        <a href="{{ .addLink }}" class="btn">
+                                            <i class="ti ti-plus"></i>
+                                            New
+                                        </a>
+                                        {{ end }}
+                                        {{ if .canDelete }}
+                                        <button class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal"
+                                                data-delete-url="{{ .deleteUrl }}"
+                                                data-item-name="{{ .instanceID }}">
+                                            <i class="ti ti-trash"></i>
+                                            Delete
+                                        </button>
+                                        {{ end }}
+                                        <a href="{{ .listLink }}" class="btn">
+                                            <i class="ti ti-arrow-left"></i>
+                                            Back to list
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -62,7 +84,24 @@
                 </div>
             </div>
         </div>
+
+    <!-- Delete confirmation modal -->
+    <div class="modal modal-blur fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-title">Are you sure?</div>
+                    <div>This action cannot be undone.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
     </div>
     {{ template "footer" . }}
-</body>
-</html>

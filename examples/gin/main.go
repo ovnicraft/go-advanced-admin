@@ -5,28 +5,41 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	admingorm "github.com/go-advanced-admin/orm-gorm"
 	"github.com/ovnicraft/go-advanced-admin"
-	// TODO: Add back when gin integrator is compatible with v1.0.1
-	// admingin "github.com/ovnicraft/go-advanced-admin-gin"
+	admingin "github.com/ovnicraft/go-advanced-admin-gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
+// ormAdapter adapts the orm-gorm integrator to the latest ORMIntegrator interface.
+type ormAdapter struct{ *admingorm.Integrator }
+
+// DeleteByID maps to DeleteInstance for older integrator versions.
+func (a ormAdapter) DeleteByID(model interface{}, id interface{}) error {
+	return a.DeleteInstance(model, id)
+}
+
+// GetAll maps to FetchInstances for older integrator versions.
+func (a ormAdapter) GetAll(model interface{}) (interface{}, error) {
+	return a.FetchInstances(model)
+}
+
 // Persona represents a user persona with basic information
 type Persona struct {
-	ID       uint   `json:"id" gorm:"primaryKey"`
-	Name     string `json:"name" gorm:"not null"`
-	Email    string `json:"email" gorm:"uniqueIndex;not null"`
-	Age      int    `json:"age"`
-	IsActive bool   `json:"is_active" gorm:"default:true"`
+    ID       uint   `json:"id" gorm:"primaryKey;column:ID"`
+    Name     string `json:"name" gorm:"not null;column:Name"`
+    Email    string `json:"email" gorm:"uniqueIndex;not null;column:Email"`
+    Age      int    `json:"age" gorm:"column:Age"`
+    IsActive bool   `json:"is_active" gorm:"default:true;column:IsActive"`
 }
 
 func main() {
 	// Initialize Gin router
 	router := gin.Default()
 
-	// Initialize database
-	db, err := gorm.Open(sqlite.Open("personas.db"), &gorm.Config{})
+    // Initialize database (use fresh DB for this example)
+    db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
@@ -43,35 +56,38 @@ func main() {
 	// Create ORM integrator (using GORM - you'll need to implement or use an existing one)
 	// ormIntegrator := gorm.NewGORMIntegrator(db) // This would need to be implemented
 
-	// Create web integrator (TODO: Add back when gin integrator is compatible)
-	// webIntegrator := admingin.NewGinIntegrator(router.Group("/admin"))
+	// Create web integrator (use root group; admin uses its own prefix)
+	webIntegrator := admingin.NewIntegrator(router.Group(""))
 
 	// Permission function - for demo, allow all actions
-	// permissionFunc := func(req admin.PermissionRequest, ctx interface{}) (bool, error) {
-	//	return true, nil // Allow all actions for demo purposes
-	// }
+	permissionFunc := func(req admin.PermissionRequest, ctx interface{}) (bool, error) {
+		return true, nil // Allow all actions for demo purposes
+	}
 
-	// Note: admin.Config is the correct type, not PanelConfig
+	// ORM integrator for GORM
+	ormIntegrator := admingorm.NewIntegrator(db)
 
-	// Create admin panel (commented out until compatible ORM integrator is available)
+	// Create admin panel
+	// Wrap ORM integrator to satisfy newer interface methods if needed.
+	panel, err := admin.NewPanel(ormAdapter{ormIntegrator}, webIntegrator, permissionFunc, nil)
+	if err != nil {
+		log.Fatal("Failed to create admin panel:", err)
+	}
 
-	/*
-		panel, err := admin.NewPanel(ormIntegrator, webIntegrator, permissionFunc, nil)
-		if err != nil {
-			log.Fatal("Failed to create admin panel:", err)
-		}
+	// Register the Persona model
+	app, err := panel.RegisterApp("personas", "Persona Management", nil)
+	if err != nil {
+		log.Fatal("Failed to register app:", err)
+	}
 
-		// Register the Persona model
-		app, err := panel.RegisterApp("Personas", "Persona Management", nil)
-		if err != nil {
-			log.Fatal("Failed to register app:", err)
-		}
+	if _, err := app.RegisterModel(&Persona{}, nil); err != nil {
+		log.Fatal("Failed to register model:", err)
+	}
 
-		_, err = app.RegisterModel(&Persona{}, nil)
-		if err != nil {
-			log.Fatal("Failed to register model:", err)
-		}
-	*/
+	log.Println("Gin integrator initialized:", webIntegrator != nil)
+	log.Println("Admin panel initialized:", panel != nil)
+
+	// No example-level asset workaround needed; integrator v0.0.4 serves assets
 
 	// Temporary routes for testing
 	router.GET("/", func(c *gin.Context) {
@@ -87,8 +103,13 @@ func main() {
 		c.JSON(http.StatusOK, personas)
 	})
 
+	// Log routes for visibility
+	for _, r := range router.Routes() {
+		log.Println(r.Method, r.Path)
+	}
+
 	log.Println("Server starting on :8080")
-	log.Println("Admin panel will be available at: http://localhost:8080/admin")
+	log.Println("Admin panel available at: http://localhost:8080/admin")
 	log.Fatal(router.Run(":8080"))
 }
 

@@ -419,7 +419,7 @@ func (a *App) GetHandler() HandlerFunc {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}
 
-		html, err := a.Panel.Config.Renderer.RenderTemplate("app", map[string]interface{}{"app": a, "models": models, "navBarItems": a.Panel.Config.GetNavBarItems(data)})
+    html, err := a.Panel.Config.Renderer.RenderTemplate("app", map[string]interface{}{"admin": a.Panel, "app": a, "models": models, "navBarItems": a.Panel.Config.GetNavBarItems(data)})
 		if err != nil {
 			return GetErrorHTML(http.StatusInternalServerError, err)
 		}

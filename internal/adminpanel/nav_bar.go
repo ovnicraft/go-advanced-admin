@@ -12,14 +12,13 @@ type NavBarItem struct {
 
 // HTML returns the HTML representation of the navigation bar item.
 func (i *NavBarItem) HTML() string {
-	finalHTML := i.Name
-	if i.Bold {
-		finalHTML = `<h2 class="text-2x1 lg:block hidden font-semibold m1-2 pr-2">` + finalHTML + "</h2>"
-	}
-	if i.Link != "" {
-		finalHTML = fmt.Sprintf(`<a class="link" href="%s">%s</a>`, i.Link, finalHTML)
-	}
-	return finalHTML
+    if i.Link != "" {
+        return fmt.Sprintf(`<a class="nav-link" href="%s">%s</a>`, i.Link, i.Name)
+    }
+    if i.Bold {
+        return fmt.Sprintf(`<span class="navbar-text fw-semibold me-2">%s</span>`, i.Name)
+    }
+    return fmt.Sprintf(`<span class="navbar-text me-2">%s</span>`, i.Name)
 }
 
 // NavBarGenerator defines a function type for generating navigation bar items.

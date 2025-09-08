@@ -112,7 +112,7 @@ function setupDeleteModals() {
 // Perform AJAX delete operation
 function performDelete(url, modal) {
     $.ajax({
-        url: url + '/delete',
+        url: url,
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
